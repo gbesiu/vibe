@@ -62,11 +62,11 @@ export const codeAgentFunction = inngest.createFunction(
       name: "code-agent",
       description: "An expert coding agent",
       system: PROMPT,
-      model: gemini({ 
-        model: "gemini-2.0-flash"
-        //defaultParameters: {
-          //temperature: 0.1,
-        //},
+      model: openai({ 
+        model: "gpt-5.1",
+        defaultParameters: {
+          temperature: 0.1,
+        },
       }),
       tools: [
         createTool({
@@ -195,8 +195,8 @@ export const codeAgentFunction = inngest.createFunction(
       name: "fragment-title-generator",
       description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
-      model: gemini({ 
-        model: "gemini-2.0-flash",
+      model: openai({ 
+        model: "gpt-5.1",
       }),
     })
 
@@ -204,8 +204,8 @@ export const codeAgentFunction = inngest.createFunction(
       name: "response-generator",
       description: "A response generator",
       system: RESPONSE_PROMPT,
-      model: gemini({ 
-        model: "gemini-2.0-flash", 
+      model: openai({ 
+        model: "gpt-5.1", 
       }),
     });
 

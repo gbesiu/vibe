@@ -63,7 +63,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "An expert coding agent",
       system: PROMPT,
       model: gemini({ 
-        model: "gemini-3-flash",
+        model: "gemini-3-flash-preview",
         defaultParameters: {
 //          temperature: 0.1,
         },
@@ -196,7 +196,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
       model: gemini({ 
-        model: "gemini-3-flash",
+        model: "gemini-3-flash-preview",
       }),
     })
 
@@ -205,7 +205,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "A response generator",
       system: RESPONSE_PROMPT,
       model: gemini({ 
-        model: "gemini-3-flash", 
+        model: "gemini-3-flash-preview", 
       }),
     });
 
@@ -227,33 +227,39 @@ export const codeAgentFunction = inngest.createFunction(
     });
 
     await step.run("save-result", async () => {
-      if (isError) {
+      try {
         return await prisma.message.create({
           data: {
             projectId: event.data.projectId,
-            content: "Something went wrong. Please try again.",
+            content: parseAgentOutput(responseOutput),
+            role: "ASSISTANT",
+            type: "RESULT",
+            fragment: {
+              create: {
+                sandboxUrl,
+                title: parseAgentOutput(fragmentTitleOuput),
+                files: result.state.data.files,
+              },
+            },
+          },
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unknown error";
+
+        return await prisma.message.create({
+          data: {
+            projectId: event.data.projectId,
+            content: message,
             role: "ASSISTANT",
             type: "ERROR",
           },
         });
       }
-
-      return await prisma.message.create({
-        data: {
-          projectId: event.data.projectId,
-          content: parseAgentOutput(responseOutput),
-          role: "ASSISTANT",
-          type: "RESULT",
-          fragment: {
-            create: {
-              sandboxUrl: sandboxUrl,
-              title: parseAgentOutput(fragmentTitleOuput),
-              files: result.state.data.files,
-            },
-          },
-        },
-      })
     });
+
 
     return { 
       url: sandboxUrl,

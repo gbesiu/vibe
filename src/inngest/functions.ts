@@ -160,20 +160,17 @@ async function llmJSON(opts: {
   try {
     result = await model.generateContent({ contents });
   } catch (err: any) {
-    if (opts.model === "gemini-3-pro" && (err.status === 429 || err.message?.includes("Exhausted"))) {
-      const msg = "[Gemini] ⚠️ Limit zapytań modelu 3-Pro (429). Przełączam na Gemini 1.5 Pro...";
-      console.warn(msg);
-      if (opts.logger) opts.logger(msg);
+    // Fallback on ANY error from the experimental 3-pro model to be safe
+    const msg = `[Gemini] ⚠️ Błąd modelu 3-Pro: ${err.message || "Unknown"}. Przełączam na Gemini 2.0 Flash (Experimental)...`;
+    console.warn(msg);
+    if (opts.logger) opts.logger(msg);
 
-      const fallbackModel = genAI.getGenerativeModel({
-        model: "gemini-1.5-pro",
-        generationConfig: { responseMimeType: "application/json" },
-        systemInstruction: opts.system,
-      });
-      result = await fallbackModel.generateContent({ contents });
-    } else {
-      throw err;
-    }
+    const fallbackModel = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
+      generationConfig: { responseMimeType: "application/json" },
+      systemInstruction: opts.system,
+    });
+    result = await fallbackModel.generateContent({ contents });
   }
 
   const response = result.response;
@@ -212,16 +209,13 @@ async function llmText(opts: {
   try {
     result = await model.generateContent({ contents });
   } catch (err: any) {
-    if (opts.model === "gemini-3-pro" && (err.status === 429 || err.message?.includes("Exhausted"))) {
-      console.warn("[Gemini] 3-Pro text exhausted, falling back to 1.5-pro");
-      const fallbackModel = genAI.getGenerativeModel({
-        model: "gemini-1.5-pro",
-        systemInstruction: opts.system,
-      });
-      result = await fallbackModel.generateContent({ contents });
-    } else {
-      throw err;
-    }
+    // Broad fallback
+    console.warn(`[Gemini] Text gen error: ${err.message}. Fallback to 2.0 Flash.`);
+    const fallbackModel = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
+      systemInstruction: opts.system,
+    });
+    result = await fallbackModel.generateContent({ contents });
   }
 
   return result.response.text();

@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { Badge } from "@/components/ui/badge";
 import { ProjectForm } from "@/modules/home/ui/components/project-form";
 import { ProjectsList } from "@/modules/home/ui/components/projects-list";
 
@@ -15,6 +16,9 @@ const Page = () => {
             height={50}
             className="hidden md:block"
           />
+          <Badge variant="outline" className="mt-4 animate-fade-in bg-green-500/10 text-green-700 border-green-200">
+            ✨ Nowość: Udostępnianie & Edycja Kodu
+          </Badge>
         </div>
         <h1 className="text-2xl md:text-5xl font-bold text-center">
           Buduj coś z Przekodem
@@ -30,5 +34,5 @@ const Page = () => {
     </div>
   );
 };
- 
+
 export default Page;

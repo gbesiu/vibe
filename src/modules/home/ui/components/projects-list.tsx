@@ -1,5 +1,7 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { ProjectCard } from "./project-card";
 

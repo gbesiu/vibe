@@ -35,6 +35,7 @@ export const ProjectView = ({ projectId }: Props) => {
 
   const [activeFragment, setActiveFragment] = useState<Fragment | null>(null);
   const [tabState, setTabState] = useState<"preview" | "code">("preview");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const updateFileAnimation = useMutation(trpc.projects.updateFile.mutationOptions({
     onSuccess: () => {
@@ -93,6 +94,7 @@ export const ProjectView = ({ projectId }: Props) => {
                 projectId={projectId}
                 activeFragment={activeFragment}
                 setActiveFragment={setActiveFragment}
+                onPreviewChange={() => setRefreshKey(k => k + 1)}
               />
             </Suspense>
           </ErrorBoundary>
@@ -129,7 +131,7 @@ export const ProjectView = ({ projectId }: Props) => {
               </div>
             </div>
             <TabsContent value="preview">
-              {!!activeFragment && <FragmentWeb data={activeFragment} />}
+              {!!activeFragment && <FragmentWeb data={activeFragment} refreshKey={refreshKey} />}
             </TabsContent>
             <TabsContent value="code" className="min-h-0">
               {!!activeFragment?.files && (

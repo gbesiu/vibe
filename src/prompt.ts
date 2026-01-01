@@ -106,7 +106,10 @@ Before writing code, strictly follow this process:
 - **Step 1**: Install dependencies.
 - **Step 2**: Create API routes/Types.
 - **Step 3**: Create UI Components (dumb components first, polished design).
-- **Step 4**: Assemble Pages (\`page.tsx\`, \`layout.tsx\`). **CRITICAL**: Ensure \`layout.tsx\` imports \`globals.css\` and applies appropriate fonts/metadata.
+- **Step 4**: Assemble Pages (\`page.tsx\`, \`layout.tsx\`). **CRITICAL**: 
+  - Ensure \`layout.tsx\` imports \`./globals.css\`.
+  - In \`globals.css\`, **NEVER** use \`@apply border-border\`. Use \`border-color: var(--border);\`.
+  - Apply appropriate fonts/metadata.
 
 ### Phase 4: Review
 - "Use client" check.

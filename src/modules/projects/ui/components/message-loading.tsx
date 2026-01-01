@@ -29,9 +29,16 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize connection
+  // Use declarative query to fetch token
+  // @ts-ignore
+  const { data: token, error: tokenError } = trpc.messages.getRealtimeToken.useQuery(
+    { runId: runId! },
+    { enabled: !!runId, retry: 2 }
+  );
+
+  // Connection Effect
   useEffect(() => {
-    if (!runId) return;
+    if (!token) return;
 
     let rt: any = null;
     let channel: any = null;
@@ -39,40 +46,9 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
     const connect = async () => {
       try {
         setError(null);
-        // 1. Get token from server
-        // @ts-ignore
-        const token = await trpc.messages.getRealtimeToken.fetch({ runId });
-        if (!token) {
-          setError("Brak tokenu autoryzacji.");
-          return;
-        }
-
         console.log("[Realtime] Connecting with token:", token);
 
-        // 2. Init Realtime
-        // Note: Inngest Realtime usually requires specific setup, assuming standard websocket behavior here
-        // If using the hosted Inngest Realtime, the token contains the URL.
         rt = new (Realtime as any)(token);
-
-        // 3. Subscribe
-        // The token response from backend usually includes `token` and `url`? 
-        // Or we pass the token to `subscribe`.
-        // Let's assume the library handles it if we pass the token.
-        // Wait, standard usage: 
-        /*
-          const socket = new WebSocket(token.url);
-          // or 
-          const channel = new Realtime(token);
-        */
-        // Let's try the most standard pattern for Inngest Realtime if known, or generic.
-        // Looking at `package.json`, it's `@inngest/realtime`.
-        // I will assume `new Realtime(token)` works or `new Realtime()` and `rt.subscribe(channelId, { token })`.
-        // Given I returned `getSubscriptionToken`, it's likely a signed token string or object.
-
-        // Let's use a robust approach compatible with the backend `getRunSubscriptionToken`.
-        // If `token` is an object, pass it.
-
-        // @ts-ignore - The library types might vary, we force it for now.
         channel = rt.channel(`run:${runId}`);
 
         channel.on("open", () => {
@@ -83,16 +59,16 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
         channel.on("error", (err: any) => {
           console.error("[Realtime] Channel error:", err);
           setError(`Błąd połączenia: ${err.message || JSON.stringify(err)}`);
+          setIsConnected(false);
         });
 
         channel.on("message", (msg: any) => {
           console.log("[Realtime] Msg:", msg);
-          // Provide fallback for msg structure
           const topic = msg.topic;
           const data = msg.data;
 
           if (topic === "log") {
-            setLogs(prev => [...prev, data.line].slice(-50)); // Keep last 50
+            setLogs(prev => [...prev, data.line].slice(-50));
           }
           if (topic === "progress") {
             const payload = data;
@@ -110,7 +86,6 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
           }
         });
 
-        // Actually subscribe
         channel.subscribe();
 
       } catch (e: any) {
@@ -123,16 +98,22 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
 
     return () => {
       channel?.unsubscribe?.();
-      // rt?.close?.(); // Realtime client might not have close, or it's disconnect
+      // rt?.close?.();
     };
-  }, [runId, trpc, onPreviewChange]);
+  }, [token, runId, onPreviewChange]);
 
-  // Fallback UI
+  // Handle Token Error
+  useEffect(() => {
+    if (tokenError) {
+      setError(`Błąd pobierania tokenu: ${tokenError.message}`);
+    }
+  }, [tokenError]);
+
   if (error) {
     return (
       <div className="flex items-center gap-2 p-4 text-red-500 bg-red-50 dark:bg-red-900/10 rounded-md">
         <span className="font-bold">!</span>
-        <span>{error} (Sprawdź konsolę przeglądarki)</span>
+        <span>{error} (Sprawdź konsolę)</span>
       </div>
     );
   }

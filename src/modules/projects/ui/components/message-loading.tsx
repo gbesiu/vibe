@@ -137,7 +137,22 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
 
     console.log("[Polling] Syncing status:", runStatus);
 
-    if (runStatus.role === "assistant" && runStatus.hasFragment) {
+    // If we have any status, we should at least show the initial tasks
+    if (tasks.length === 0) {
+      setTasks([
+        { id: "1", label: "Wysłano zapytanie", status: "done" },
+        { id: "2", label: "Analiza Agenta Vibe", status: "running", detail: "inicjalizacja..." },
+        { id: "3", label: "Generowanie kodu", status: "queued" },
+      ]);
+    }
+
+    if (runStatus.role === "assistant" && !runStatus.hasFragment) {
+      setTasks([
+        { id: "1", label: "Wysłano zapytanie", status: "done" },
+        { id: "2", label: "Analiza Agenta Vibe", status: "done" },
+        { id: "3", label: "Tworzenie plików", status: "running", detail: "zapisywanie..." },
+      ]);
+    } else if (runStatus.role === "assistant" && runStatus.hasFragment) {
       setTasks([
         { id: "1", label: "Wysłano zapytanie", status: "done" },
         { id: "2", label: "Analiza Agenta Vibe", status: "done" },
@@ -148,7 +163,7 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
       setError("Wystąpił błąd podczas przetwarzania");
       setIsConnected(false);
     }
-  }, [runStatus, isConnected, onPreviewChange]);
+  }, [runStatus, isConnected, onPreviewChange, tasks.length]);
 
   // Handle Token Error
   useEffect(() => {

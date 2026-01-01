@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { inngest } from "@/inngest/client";
 import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
 import { consumeCredits } from "@/lib/usage";
+import { getRunSubscriptionToken } from "@/inngest/helpers";
 
 export const messagesRouter = createTRPCRouter({
   getMany: protectedProcedure
@@ -88,8 +89,6 @@ export const messagesRouter = createTRPCRouter({
   getRealtimeToken: protectedProcedure
     .input(z.object({ runId: z.string() }))
     .query(async ({ input }) => {
-      // Lazy import to avoid cycle
-      const { getRunSubscriptionToken } = await import("@/inngest/functions");
       return await getRunSubscriptionToken({ runId: input.runId });
     }),
 });

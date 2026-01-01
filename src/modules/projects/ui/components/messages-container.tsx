@@ -14,41 +14,40 @@ interface Props {
   setActiveFragment: (fragment: Fragment | null) => void;
 };
 
-export const MessagesContainer = ({ 
+import confetti from "canvas-confetti";
+
+// ... existing imports
+
+export const MessagesContainer = ({
   projectId,
   activeFragment,
   setActiveFragment
 }: Props) => {
-  const trpc = useTRPC();
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const lastAssistantMessageIdRef = useRef<string | null>(null);
-
-  const { data: messages } = useSuspenseQuery(trpc.messages.getMany.queryOptions({
-    projectId: projectId,
-  }, {
-    refetchInterval: 2000,
-  }));
-
-  useEffect(() => {
-    const lastAssistantMessage = messages.findLast(
-      (message) => message.role === "ASSISTANT"
-    );
-
-    if (
-      lastAssistantMessage?.fragment &&
-      lastAssistantMessage.id !== lastAssistantMessageIdRef.current
-    ) {
-      setActiveFragment(lastAssistantMessage.fragment);
-      lastAssistantMessageIdRef.current = lastAssistantMessage.id;
-    }
-  }, [messages, setActiveFragment]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView();
-  }, [messages.length]);
+  // ... existing hooks
 
   const lastMessage = messages[messages.length - 1];
   const isLastMessageUser = lastMessage?.role === "USER";
+  const prevMessageCount = useRef(messages.length);
+
+  useEffect(() => {
+    // If we have a new message and it's from the assistant (meaning job done)
+    if (messages.length > prevMessageCount.current && lastMessage?.role === "ASSISTANT") {
+      // 1. Confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
+      // 2. Sound (Success Chime)
+      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(e => console.log("Audio play failed (user interaction required)", e));
+    }
+    prevMessageCount.current = messages.length;
+  }, [messages.length, lastMessage?.role]);
+
+  // ... rest of render
 
   return (
     <div className="flex flex-col flex-1 min-h-0">

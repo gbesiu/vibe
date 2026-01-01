@@ -34,9 +34,13 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
   const { data: token, error: tokenError } = useQuery({
     queryKey: ["getRealtimeToken", runId],
     queryFn: async () => {
-      // Fallback to accessing client directly if proxy helpers fail
-      // @ts-ignore
-      return await trpc.client.messages.getRealtimeTokenV2.query({ runId: runId! });
+      // Fallback to raw fetch to bypass TRPC Proxy issues "is not a function"
+      const input = encodeURIComponent(JSON.stringify({ json: { runId } }));
+      const res = await fetch(`/api/trpc/messages.getRealtimeTokenV2?input=${input}`);
+      if (!res.ok) throw new Error("Failed to fetch token via HTTP");
+      const body = await res.json();
+      // Handle SuperJSON response structure (result.data.json) or standard (result.data)
+      return body?.result?.data?.json ?? body?.result?.data;
     },
     enabled: !!runId,
     retry: 2

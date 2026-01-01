@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { ExternalLinkIcon, RefreshCcwIcon } from "lucide-react";
 
@@ -32,9 +34,9 @@ export function FragmentWeb({ data }: Props) {
           </Button>
         </Hint>
         <Hint text="Click to copy" side="bottom">
-          <Button 
-            size="sm" 
-            variant="outline" 
+          <Button
+            size="sm"
+            variant="outline"
             onClick={handleCopy}
             disabled={!data.sandboxUrl || copied}
             className="flex-1 justify-start text-start font-normal"

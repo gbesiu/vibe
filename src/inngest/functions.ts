@@ -322,9 +322,9 @@ export const buildAppWorkflow = inngest.createFunction(
     const projectId = event.data.projectId;
     const previousMessages = event.data.previousMessages || [];
     const model = event.data.model || "gpt-4o-mini";
-    const maxIterations = event.data.maxIterations || 10;
+    const maxIterations = 8; // Force hard limit for speed
 
-    console.log("!!! BuildAppWorkflow Triggered !!!", { runId, userId, prompt });
+    console.log("!!! BuildAppWorkflow Triggered !!!", { runId, userId, prompt, maxIterations });
 
     try {
       if (!runId || !prompt) {

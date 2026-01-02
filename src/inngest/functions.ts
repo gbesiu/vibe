@@ -1,6 +1,6 @@
 import { z } from "zod";
 import OpenAI from "openai";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { Sandbox } from "@e2b/code-interpreter";
 
 import { inngest } from "@/inngest/client";
@@ -135,14 +135,23 @@ if (!GEMINI_API_KEY) {
 }
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "dummy-key");
 
+const SAFETY_SETTINGS = [
+  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+];
+
 async function llmJSON(opts: {
   model: string;
   system: string;
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
   logger?: (msg: string) => void;
 }): Promise<any> {
+  // Primary: Gemini 2.0 Flash (Fast & Smart)
   const model = genAI.getGenerativeModel({
-    model: "gemini-3-pro",
+    model: "gemini-2.0-flash-exp",
+    safetySettings: SAFETY_SETTINGS,
     generationConfig: {
       responseMimeType: "application/json",
     },
@@ -160,14 +169,15 @@ async function llmJSON(opts: {
   try {
     result = await model.generateContent({ contents });
   } catch (err: any) {
-    console.warn(`[Gemini] Primary (3-pro) failed: ${err.message}. Waiting 2s...`);
+    console.warn(`[Gemini] Primary (2.0-flash) failed: ${err.message}. Waiting 2s...`);
     await new Promise(r => setTimeout(r, 2000));
 
     try {
-      // First fallback: 2.0 Flash
-      if (opts.logger) opts.logger("[Gemini] Fallback 1: Gemini 2.0 Flash...");
+      // First fallback: 1.5 Pro (Smarter but slower)
+      if (opts.logger) opts.logger("[Gemini] Fallback 1: Gemini 1.5 Pro...");
       const fallbackModel1 = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-1.5-pro",
+        safetySettings: SAFETY_SETTINGS,
         generationConfig: { responseMimeType: "application/json" },
         systemInstruction: opts.system,
       });
@@ -182,6 +192,7 @@ async function llmJSON(opts: {
       try {
         const fallbackModel2 = genAI.getGenerativeModel({
           model: "gemini-1.5-flash",
+          safetySettings: SAFETY_SETTINGS,
           generationConfig: { responseMimeType: "application/json" },
           systemInstruction: opts.system,
         });
@@ -235,8 +246,10 @@ async function llmText(opts: {
   system: string;
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
 }): Promise<string> {
+  // Primary: 2.0 Flash
   const model = genAI.getGenerativeModel({
-    model: "gemini-3-pro",
+    model: "gemini-2.0-flash-exp",
+    safetySettings: SAFETY_SETTINGS,
     systemInstruction: opts.system,
   });
 
@@ -249,16 +262,26 @@ async function llmText(opts: {
   try {
     result = await model.generateContent({ contents });
   } catch (err: any) {
-    // 1st Fallback
+    // 1st Fallback: 1.5 Pro
+    console.warn(`[Gemini] Text primary failed: ${err.message}. Fallback 1...`);
     await new Promise(r => setTimeout(r, 2000));
     try {
-      const fb1 = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp", systemInstruction: opts.system });
+      const fb1 = genAI.getGenerativeModel({
+        model: "gemini-1.5-pro",
+        safetySettings: SAFETY_SETTINGS,
+        systemInstruction: opts.system
+      });
       result = await fb1.generateContent({ contents });
     } catch (err2) {
-      // 2nd Fallback
+      // 2nd Fallback: 1.5 Flash
+      console.warn(`[Gemini] Text fallback 1 failed. Fallback 2...`);
       await new Promise(r => setTimeout(r, 2000));
       try {
-        const fb2 = genAI.getGenerativeModel({ model: "gemini-1.5-flash", systemInstruction: opts.system });
+        const fb2 = genAI.getGenerativeModel({
+          model: "gemini-1.5-flash",
+          safetySettings: SAFETY_SETTINGS,
+          systemInstruction: opts.system
+        });
         result = await fb2.generateContent({ contents });
       } catch (err3: any) {
         console.warn(`[Gemini] Fallback 2 text failed: ${err3.message}. Trying OpenAI...`);

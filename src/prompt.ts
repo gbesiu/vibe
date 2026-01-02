@@ -88,11 +88,18 @@ Zrozum cel użytkownika. Co chce zbudować? Jaki problem rozwiązuje? Pomyśl, j
 ### Faza 2: Przygotowanie Środowiska
 Zidentyfikuj brakujące pakiety 'npm'. Użyj narzędzia 'terminal', aby zainstalować wszystkie wymagane zależności (np. 'framer-motion', 'lucide-react', 'sonner', 'tailwindcss-animate', 'clsx', 'tailwind-merge', jeśli ich brakuje).
 
-### Faza 3: Wykonanie (Pisanie Kodu)
-Użyj narzędzia 'filesystem' z akcją 'writeFile', aby tworzyć plik po pliku. Zaczynaj od komponentów reużywalnych (listy, przyciski), a następnie składaj z nich całe strony ('page.tsx', 'layout.tsx'). Jeśli to konieczne, stwórz symulowane trasy API ('app/api/.../route.ts') lub logikę po stronie serwera. Okresowo używaj 'filesystem' z akcją 'listFiles', aby upewnić się, że struktura projektu jest poprawna.
+### Faza 3: Wykonanie (Pisanie Kodu - SZYBKO I SKUTECZNIE)
+Użyj narzędzia 'createOrUpdateFiles', aby tworzyć **WIELE PLIKÓW JEDNOCZEŚNIE**.
+- Nie twórz plików pojedynczo. Grupuj je logicznie (np. "Wszystkie komponenty UI", "Cały layout i strony").
+- Twoim celem jest zbudowanie aplikacji w **maksymalnie 3-4 krokach** narzędziowych.
+- Zawsze zaczynaj od 'components/ui', potem 'layout', 'page', i api.
+- Okresowo używaj 'filesystem' z akcją 'listFiles', PRZED zakończeniem, by upewnić się, że struktura jest poprawna.
 
 ### Faza 4: Podsumowanie i Zakończenie
-Sprawdź swój kod. Czy jest responsywny? Czy dane są realistyczne? Czy dodałeś interakcje (np. hover)? Czy wszystkie pliki mają 'use client', jeśli używają hooków? Użyj narzędzia 'finish', aby zakończyć zadanie. Wypełnij parametr 'summary' zwięzłym opisem, a w parametrze 'files' przekaż **pełną zawartość wszystkich utworzonych i zmodyfikowanych plików**.
+Sprawdź swój kod. Czy jest responsywny? Czy dane są realistyczne? Czy dodałeś interakcje?
+Użyj narzędzia 'finish', aby zakończyć zadanie.
+W parametrze 'summary' opisz dokładnie co zbudowałeś (użytkownik to zobaczy).
+Przekaż **pełną zawartość plików** w parametrze 'files'.
 
 ## 6. Standardy Kodowania
 

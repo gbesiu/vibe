@@ -74,15 +74,22 @@ export const messagesRouter = createTRPCRouter({
         },
       });
 
-      await inngest.send({
-        name: "vibe/app.build.requested",
-        data: {
-          runId: createdMessage.id,
-          userId: ctx.auth.userId,
-          projectId: input.projectId,
-          prompt: input.value,
-        },
-      });
+      console.log("[TRPC] Sending Inngest event: vibe/app.build.requested", { runId: createdMessage.id });
+
+      try {
+        await inngest.send({
+          name: "vibe/app.build.requested",
+          data: {
+            runId: createdMessage.id,
+            userId: ctx.auth.userId,
+            projectId: input.projectId,
+            prompt: input.value,
+          },
+        });
+        console.log("[TRPC] Inngest event sent successfully!");
+      } catch (err) {
+        console.error("[TRPC] Failed to send Inngest event:", err);
+      }
 
       return createdMessage;
     }),

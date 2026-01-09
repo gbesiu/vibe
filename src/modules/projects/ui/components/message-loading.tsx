@@ -45,7 +45,7 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
     retry: 2
   });
 
-  // Polling for run status (instead of WebSocket)
+  // Polling for run status (FALLBACK)
   const { data: runStatus } = useQuery({
     queryKey: ["runStatus", runId],
     queryFn: async () => {
@@ -54,55 +54,101 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
       const body = await res.json();
       return body?.result?.data?.json ?? body?.result?.data;
     },
-    enabled: !!runId,
-    refetchInterval: 2000, // Poll every 2 seconds
+    enabled: !!runId && !isConnected, // Only poll if WebSocket is not connected
+    refetchInterval: 5000,
     retry: 2,
   });
 
-  // Update UI based on run status
+  // Native WebSocket for Live Updates
   useEffect(() => {
-    if (!runStatus) return;
+    if (!token?.wsUrl || !runId) return;
 
-    console.log("[Polling] Update:", {
-      role: runStatus.role,
-      hasFragment: runStatus.hasFragment,
-      type: runStatus.type
-    });
+    console.log("[Realtime] Connecting to:", token.wsUrl);
 
-    // Show connection indicator
-    setIsConnected(true);
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: any;
 
-    // Update tasks based on message type
-    if (runStatus.role === "user") {
-      setTasks([
-        { id: "1", label: "Wysłano zapytanie", status: "done" },
-        { id: "2", label: "Analiza Agenta Vibe", status: "running", detail: "planowanie..." },
-        { id: "3", label: "Generowanie kodu", status: "queued" },
-      ]);
-    } else if (runStatus.role === "assistant" && !runStatus.hasFragment) {
-      setTasks([
-        { id: "1", label: "Wysłano zapytanie", status: "done" },
-        { id: "2", label: "Analiza Agenta Vibe", status: "done" },
-        { id: "3", label: "Tworzenie plików", status: "running", detail: "zapisywanie..." },
-      ]);
-    } else if (runStatus.role === "assistant" && runStatus.hasFragment) {
+    const connect = () => {
+      ws = new WebSocket(token.wsUrl);
+
+      ws.onopen = () => {
+        console.log("[Realtime] ✅ Connected to Inngest WebSocket!");
+        setIsConnected(true);
+        setError(null);
+      };
+
+      ws.onmessage = (event) => {
+        console.log("[Realtime] 📩 Raw message received:", event.data);
+        try {
+          const payload = JSON.parse(event.data);
+          console.log("[Realtime] Message:", payload);
+
+          // Handle Inngest Realtime Protocol
+          // The data is usually in payload.data or payload.event
+          const data = payload.data || payload;
+          const topic = payload.topic;
+
+          if (topic === "progress") {
+            const p = data as any;
+            if (p.kind === "init") setTasks(p.tasks);
+            if (p.kind === "task_update") {
+              setTasks(prev => prev.map(t => t.id === p.taskId ? { ...t, status: p.status, detail: p.detail } : t));
+            }
+          } else if (topic === "log") {
+            setLogs(prev => [...prev.slice(-100), data.line]);
+          } else if (topic === "preview") {
+            console.log("[Realtime] Preview update triggered!");
+            onPreviewChange?.();
+          } else if (topic === "result") {
+            console.log("[Realtime] Result received:", data);
+            onPreviewChange?.();
+          }
+        } catch (err) {
+          console.error("[Realtime] Parse error:", err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error("[Realtime] WebSocket error:", err);
+      };
+
+      ws.onclose = () => {
+        console.log("[Realtime] Disconnected.");
+        setIsConnected(false);
+        // Attempt reconnect after 3 seconds
+        reconnectTimeout = setTimeout(connect, 3000);
+      };
+    };
+
+    connect();
+
+    return () => {
+      if (ws) {
+        ws.onclose = null; // Prevent reconnect on intentional close
+        ws.close();
+      }
+      clearTimeout(reconnectTimeout);
+    };
+  }, [token, runId, onPreviewChange]);
+
+  // Update UI based on run status (When polling as fallback)
+  useEffect(() => {
+    if (!runStatus || isConnected) return;
+
+    console.log("[Polling] Syncing status:", runStatus);
+
+    if (runStatus.role === "assistant" && runStatus.hasFragment) {
       setTasks([
         { id: "1", label: "Wysłano zapytanie", status: "done" },
         { id: "2", label: "Analiza Agenta Vibe", status: "done" },
         { id: "3", label: "Generowanie kodu", status: "done" },
       ]);
-
-      // Trigger preview change if fragment is ready
-      if (runStatus.hasFragment) {
-        console.log("[Polling] Fragment ready, triggering preview!");
-        onPreviewChange?.();
-      }
+      onPreviewChange?.();
     } else if (runStatus.status === "error") {
       setError("Wystąpił błąd podczas przetwarzania");
       setIsConnected(false);
     }
-
-  }, [runStatus, onPreviewChange]);
+  }, [runStatus, isConnected, onPreviewChange]);
 
   // Handle Token Error
   useEffect(() => {

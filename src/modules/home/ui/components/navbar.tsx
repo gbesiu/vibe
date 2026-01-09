@@ -28,12 +28,12 @@ export const Navbar = () => {
           <div className="flex gap-2">
             <SignUpButton>
               <Button variant="outline" size="sm">
-                Zarejestruj się
+                Sign up
               </Button>
             </SignUpButton>
             <SignInButton>
               <Button size="sm">
-                Zaloguj się
+                Sign in
               </Button>
             </SignInButton>
           </div>

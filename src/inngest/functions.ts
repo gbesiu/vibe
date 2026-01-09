@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Sandbox } from "@e2b/code-interpreter";
-import { grok, gemini, openai, createAgent, createTool, createNetwork, type Tool, type Message, createState } from "@inngest/agent-kit";
+import { grok, openai, createAgent, createTool, createNetwork, type Tool, type Message, createState } from "@inngest/agent-kit";
 
 import { prisma } from "@/lib/db";
 import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from "@/prompt";
@@ -63,7 +63,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "An expert coding agent",
       system: PROMPT,
       model: grok({ 
-        model: "gemini-2.5-flash",
+        model: "grok-4-latest",
         defaultParameters: {
           temperature: 0.1,
         },
@@ -196,7 +196,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
       model: grok({ 
-        model: "gemini-2.5-flash",
+        model: "grok-4-latest",
       }),
     })
 
@@ -205,7 +205,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "A response generator",
       system: RESPONSE_PROMPT,
       model: grok({ 
-        model: "gemini-2.5-flash",
+        model: "grok-4-latest",
       }),
     });
 

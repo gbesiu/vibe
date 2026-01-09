@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { subscribe } from "@inngest/realtime";
+import { Realtime } from "@inngest/realtime";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Loader2, Terminal, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -50,22 +50,29 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
   useEffect(() => {
     if (!token) return;
 
-    let connection: any = null;
+    let rt: any = null;
+    let channel: any = null;
 
     const connect = async () => {
       try {
         setError(null);
         console.log("[Realtime] Connecting with token:", token);
 
-        // Subscribe using token directly - token contains authentication
-        connection = subscribe({
-          app: token, // Token is the permission/auth object
-          channel: `run:${runId}`,
-          topics: ["progress", "log", "preview"],
+        rt = new (Realtime as any)(token);
+        channel = rt.channel(`run:${runId}`);
+
+        channel.on("open", () => {
+          console.log("[Realtime] Connected!");
+          setIsConnected(true);
         });
 
-        // Handle events
-        connection.on("message", (msg: any) => {
+        channel.on("error", (err: any) => {
+          console.error("[Realtime] Channel error:", err);
+          setError(`Błąd połączenia: ${err.message || JSON.stringify(err)}`);
+          setIsConnected(false);
+        });
+
+        channel.on("message", (msg: any) => {
           console.log("[Realtime] Msg:", msg);
           const topic = msg.topic;
           const data = msg.data;
@@ -89,16 +96,7 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
           }
         });
 
-        connection.on("open", () => {
-          console.log("[Realtime] Connected!");
-          setIsConnected(true);
-        });
-
-        connection.on("error", (err: any) => {
-          console.error("[Realtime] Channel error:", err);
-          setError(`Błąd połączenia: ${err.message || JSON.stringify(err)}`);
-          setIsConnected(false);
-        });
+        channel.subscribe();
 
       } catch (e: any) {
         console.error("Realtime setup error", e);
@@ -109,7 +107,8 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
     connect();
 
     return () => {
-      connection?.close?.();
+      channel?.unsubscribe?.();
+      // rt?.close?.();
     };
   }, [token, runId, onPreviewChange]);
 

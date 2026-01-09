@@ -387,9 +387,28 @@ export const buildAppWorkflow = inngest.createFunction(
       return `https://${sandbox.getHost(3000)}`;
     });
 
-    // 7) Save (Placeholder Hook for now)
+    // 7) Save result to database
     await publishProgress(publishFn, runId, { kind: "task_update", taskId: "save-result", status: "running" });
-    // In a real app, you would call prisma.fragment.create here using step.run
+
+    await step.run("save-to-db", async () => {
+      // Create the assistant message with the fragment
+      await prisma.message.create({
+        data: {
+          projectId,
+          content: response,
+          role: "ASSISTANT",
+          type: "RESULT",
+          fragment: {
+            create: {
+              title: fragmentTitle,
+              sandboxUrl: sandboxUrl,
+              files: {}, // Placeholder for now - could serialize files if needed
+            }
+          }
+        }
+      });
+    });
+
     await publishProgress(publishFn, runId, { kind: "task_update", taskId: "save-result", status: "done" });
 
     // 8) Finalize

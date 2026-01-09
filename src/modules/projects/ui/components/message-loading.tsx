@@ -63,37 +63,41 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
   useEffect(() => {
     if (!runStatus) return;
 
-    console.log("[Polling] Run status:", runStatus);
+    console.log("[Polling] Update:", {
+      role: runStatus.role,
+      hasFragment: runStatus.hasFragment,
+      type: runStatus.type
+    });
 
     // Show connection indicator
     setIsConnected(true);
 
     // Update tasks based on message type
-    // MessageType: "user" | "assistant" 
-    // If assistant message exists with fragment, it's done
     if (runStatus.role === "user") {
       setTasks([
         { id: "1", label: "Wysłano zapytanie", status: "done" },
-        { id: "2", label: "Oczekiwanie na odpowiedź", status: "running", detail: "przetwarzanie..." },
+        { id: "2", label: "Analiza Agenta Vibe", status: "running", detail: "planowanie..." },
         { id: "3", label: "Generowanie kodu", status: "queued" },
       ]);
     } else if (runStatus.role === "assistant" && !runStatus.hasFragment) {
       setTasks([
         { id: "1", label: "Wysłano zapytanie", status: "done" },
-        { id: "2", label: "Odpowiedź otrzymana", status: "done" },
-        { id: "3", label: "Generowanie kodu", status: "running", detail: "tworzenie aplikacji..." },
+        { id: "2", label: "Analiza Agenta Vibe", status: "done" },
+        { id: "3", label: "Tworzenie plików", status: "running", detail: "zapisywanie..." },
       ]);
     } else if (runStatus.role === "assistant" && runStatus.hasFragment) {
       setTasks([
         { id: "1", label: "Wysłano zapytanie", status: "done" },
-        { id: "2", label: "Odpowiedź otrzymana", status: "done" },
+        { id: "2", label: "Analiza Agenta Vibe", status: "done" },
         { id: "3", label: "Generowanie kodu", status: "done" },
       ]);
+
       // Trigger preview change if fragment is ready
-      if (runStatus.fragmentId) {
+      if (runStatus.hasFragment) {
+        console.log("[Polling] Fragment ready, triggering preview!");
         onPreviewChange?.();
       }
-    } else if (runStatus.status === "error") { // Keep error handling for now
+    } else if (runStatus.status === "error") {
       setError("Wystąpił błąd podczas przetwarzania");
       setIsConnected(false);
     }

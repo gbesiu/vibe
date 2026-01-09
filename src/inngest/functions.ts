@@ -257,25 +257,23 @@ async function llmText(opts: {
     } catch (err2) {
       // 2nd Fallback
       await new Promise(r => setTimeout(r, 2000));
-      try {
-        const fb2 = genAI.getGenerativeModel({ model: "gemini-1.5-flash", systemInstruction: opts.system });
-        result = await fb2.generateContent({ contents });
-      } catch (err3: any) {
-        console.warn(`[Gemini] Fallback 2 text failed: ${err3.message}. Trying OpenAI...`);
-        // Use process.env.OPENAI_API_KEY if available
-        if (!process.env.OPENAI_API_KEY) throw err3;
+      const fb2 = genAI.getGenerativeModel({ model: "gemini-1.5-flash", systemInstruction: opts.system });
+      result = await fb2.generateContent({ contents });
+    } catch (err3: any) {
+      console.warn(`[Gemini] Fallback 2 text failed: ${err3.message}. Trying OpenAI...`);
+      // Use process.env.OPENAI_API_KEY if available
+      if (!process.env.OPENAI_API_KEY) throw err3;
 
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: opts.system },
-            ...opts.messages.map(m => ({ role: m.role, content: m.content }))
-          ]
-        });
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: opts.system },
+          ...opts.messages.map(m => ({ role: m.role, content: m.content }))
+        ]
+      });
 
-        return completion.choices[0].message.content || "";
-      }
+      return completion.choices[0].message.content || "";
     }
   }
 

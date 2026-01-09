@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { Suspense, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { EyeIcon, CodeIcon, CrownIcon } from "lucide-react";
 
 import { Fragment } from "@/generated/prisma";
@@ -35,14 +36,14 @@ export const ProjectView = ({ projectId }: Props) => {
   const [activeFragment, setActiveFragment] = useState<Fragment | null>(null);
   const [tabState, setTabState] = useState<"preview" | "code">("preview");
 
-  const updateFileAnimation = trpc.projects.updateFile.useMutation({
+  const updateFileAnimation = useMutation(trpc.projects.updateFile.mutationOptions({
     onSuccess: () => {
       toast.success("File saved successfully");
     },
     onError: () => {
       toast.error("Failed to save file");
     }
-  });
+  }));
 
   const handleSaveFile = async (path: string, content: string) => {
     if (!activeFragment) return;

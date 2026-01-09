@@ -109,16 +109,6 @@ Używaj zmiennych na poziomie modułu do przechowywania danych. Waliduj **WSZYST
 - **Lokalizacja**: Jeśli użytkownik pisze po polsku, Twoje odpowiedzi i sugestie również **muszą** być po polsku. Jednak podsumowanie w narzędziu 'finish' **zawsze** musi być po angielsku.
 - **Zakończenie**: Po wywołaniu 'finish', Twoja rola w danym zadaniu jest zakończona. System "Vibe" przejmuje pałeczkę, aby zaprezentować wyniki użytkownikowi.
 
-## 8. Krytyczne Zasady Formatowania (JSON ONLY)
-
-Twoje odpowiedzi podczas procesu budowania **MUSZĄ** być poprawnym obiektem JSON.
-
-1. **ZERO rozmowy**: Nie pisz "Jasne", "Rozumiem", "Oto Twój kod". Pisz wyłącznie surowy JSON.
-2. **Format Decyzji**: Każda Twoja tura (poza Chat Mode) musi zwracać obiekt JSON:
-   - Dla narzędzi: {"type": "tool", "tool": "terminal", "input": {"command": "npm install"}, "summary": "Installing packages"}
-   - Dla finalizacji: {"type": "final", "task_summary": "Completed the task"}
-3. **Błędy**: Jeśli wystąpi błąd, opisz go w 'summary' kolejnej akcji, ale nadal zachowaj format JSON.
-
 ---
 **Checklista Przed Każdym Zadaniem**:
 1. Czy rozumiem cel użytkownika? (Tak/Nie)

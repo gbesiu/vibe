@@ -123,27 +123,14 @@ export const messagesRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      // 2. Find any later assistant message with a fragment in the same project
-      const latestAssistantMessage = await prisma.message.findFirst({
-        where: {
-          projectId: message.projectId,
-          role: "ASSISTANT",
-          createdAt: { gt: message.createdAt },
-        },
-        include: { fragment: true },
-        orderBy: { createdAt: "desc" },
-      });
-
-      const effectiveMessage = latestAssistantMessage || message;
-
       return {
-        id: effectiveMessage.id,
-        type: effectiveMessage.type,
-        role: effectiveMessage.role,
-        content: effectiveMessage.content,
-        hasFragment: !!effectiveMessage.fragment,
-        fragmentId: effectiveMessage.fragment?.id,
-        updatedAt: effectiveMessage.updatedAt,
+        id: message.id,
+        type: message.type,
+        role: message.role,
+        content: message.content,
+        hasFragment: !!message.fragment,
+        fragmentId: message.fragment?.id,
+        updatedAt: message.updatedAt,
       };
     }),
 });

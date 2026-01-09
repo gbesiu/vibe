@@ -54,9 +54,7 @@ export const MessageForm = ({ projectId }: Props) => {
       );
     },
     onError: (error) => {
-      console.error("[CreateMessage] Error:", error);
-      const msg = error.message || "Wystąpił nieznany błąd";
-      toast.error(msg);
+      toast.error(error.message);
 
       if (error.data?.code === "TOO_MANY_REQUESTS") {
         router.push("/pricing");

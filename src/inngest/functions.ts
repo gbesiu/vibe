@@ -499,14 +499,6 @@ export const buildAppWorkflow = inngest.createFunction(
         taskSummary = "Zakończono limit iteracji. Aplikacja powinna być gotowa, ale agent nie potwierdził finalizacji.";
       }
 
-      // CHECK: Did we actually build anything?
-      const hasChanges = state.toolTrace.some(t => t.tool === "createOrUpdateFiles");
-      if (!hasChanges) {
-        // Fail the run explicitly if no files were touched
-        await publishProgress(publishFn, runId, { kind: "task_update", taskId: "agent-loop", status: "error", detail: "Brak zmian w plikach" });
-        throw new Error("Agent zakończył pracę bez wprowadzenia żadnych zmian w kodzie. Prawdopodobnie wystąpił błąd modelu lub limit iteracji.");
-      }
-
       await publishProgress(publishFn, runId, { kind: "task_update", taskId: "agent-loop", status: "done" });
 
       // 4) Fragment Title

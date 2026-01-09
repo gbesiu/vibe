@@ -160,32 +160,17 @@ async function llmJSON(opts: {
   try {
     result = await model.generateContent({ contents });
   } catch (err: any) {
-    console.warn(`[Gemini] Primary (3-pro) failed: ${err.message}. Waiting 2s...`);
-    await new Promise(r => setTimeout(r, 2000));
+    // Fallback on ANY error from the experimental 3-pro model to be safe
+    const msg = `[Gemini] ⚠️ Błąd modelu 3-Pro: ${err.message || "Unknown"}. Przełączam na Gemini 2.0 Flash (Experimental)...`;
+    console.warn(msg);
+    if (opts.logger) opts.logger(msg);
 
-    try {
-      // First fallback: 2.0 Flash
-      if (opts.logger) opts.logger("[Gemini] Fallback 1: Gemini 2.0 Flash...");
-      const fallbackModel1 = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp",
-        generationConfig: { responseMimeType: "application/json" },
-        systemInstruction: opts.system,
-      });
-      result = await fallbackModel1.generateContent({ contents });
-
-    } catch (err2: any) {
-      console.warn(`[Gemini] Fallback 1 failed: ${err2.message}. Waiting 2s...`);
-      await new Promise(r => setTimeout(r, 2000));
-
-      // Second fallback: 1.5 Flash (Most stable/high limit)
-      if (opts.logger) opts.logger("[Gemini] Fallback 2: Gemini 1.5 Flash (Last Resort)...");
-      const fallbackModel2 = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-        generationConfig: { responseMimeType: "application/json" },
-        systemInstruction: opts.system,
-      });
-      result = await fallbackModel2.generateContent({ contents });
-    }
+    const fallbackModel = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
+      generationConfig: { responseMimeType: "application/json" },
+      systemInstruction: opts.system,
+    });
+    result = await fallbackModel.generateContent({ contents });
   }
 
   const response = result.response;
@@ -224,17 +209,13 @@ async function llmText(opts: {
   try {
     result = await model.generateContent({ contents });
   } catch (err: any) {
-    // 1st Fallback
-    await new Promise(r => setTimeout(r, 2000));
-    try {
-      const fb1 = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp", systemInstruction: opts.system });
-      result = await fb1.generateContent({ contents });
-    } catch (err2) {
-      // 2nd Fallback
-      await new Promise(r => setTimeout(r, 2000));
-      const fb2 = genAI.getGenerativeModel({ model: "gemini-1.5-flash", systemInstruction: opts.system });
-      result = await fb2.generateContent({ contents });
-    }
+    // Broad fallback
+    console.warn(`[Gemini] Text gen error: ${err.message}. Fallback to 2.0 Flash.`);
+    const fallbackModel = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
+      systemInstruction: opts.system,
+    });
+    result = await fallbackModel.generateContent({ contents });
   }
 
   return result.response.text();

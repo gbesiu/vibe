@@ -1,13 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { useUser } from "@clerk/nextjs";
-import { formatDistanceToNow } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
-
 import { useTRPC } from "@/trpc/client";
-import { Button } from "@/components/ui/button";
+import { ProjectCard } from "./project-card";
 
 export const ProjectsList = () => {
   const trpc = useTRPC();
@@ -17,47 +11,27 @@ export const ProjectsList = () => {
   if (!user) return null;
 
   return (
-    <div className="w-full bg-white dark:bg-sidebar rounded-xl p-8 border flex flex-col gap-y-6 sm:gap-y-4">
-      <h2 className="text-2xl font-semibold">
-        Twoje Przekody
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+    <div className="w-full flex flex-col gap-y-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">
+          Twoje Przekody
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects?.length === 0 && (
-          <div className="col-span-full text-center">
-            <p className="text-sm text-muted-foreground">
-              Nie znaleziono projektów
+          <div className="col-span-full flex flex-col items-center justify-center p-12 border border-dashed rounded-xl bg-muted/20">
+            <p className="text-muted-foreground">
+              Nie masz jeszcze żadnych projektów.
             </p>
           </div>
         )}
+
         {projects?.map((project) => (
-          <Button
+          <ProjectCard
             key={project.id}
-            variant="outline"
-            className="font-normal h-auto justify-start w-full text-start p-4"
-            asChild
-          >
-            <Link href={`/projects/${project.id}`}>
-              <div className="flex items-center gap-x-4">
-                <Image
-                  src="/logo.svg"
-                  alt="Przekod"
-                  width={32}
-                  height={32}
-                  className="object-contain"
-                />
-                <div className="flex flex-col">
-                  <h3 className="truncate font-medium">
-                    {project.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(project.updatedAt, {
-                      addSuffix: true,
-                    })}
-                  </p>
-                </div>
-              </div>
-            </Link>
-          </Button>
+            project={project}
+          />
         ))}
       </div>
     </div>

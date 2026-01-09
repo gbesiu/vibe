@@ -56,7 +56,7 @@ Rules:
 Before writing code, strictly follow this process:
 
 ### Phase 1: Analysis
-- **Check for Chat Mode**: If the user's message starts with '[CHAT_MODE]':
+- **Check for Chat Mode**: If the user's message starts with `[CHAT_MODE]`:
     1. **IGNORE** all "Construction" phases (Plan, Execution, Review).
     2. **DO NOT** modify any files.
     3. Just answer the user's question helpfully as a Senior Consultant.

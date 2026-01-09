@@ -27,7 +27,6 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
   const [logs, setLogs] = useState<string[]>([]);
   const [isLogsOpen, setIsLogsOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Initialize connection
   useEffect(() => {
@@ -38,21 +37,21 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
 
     const connect = async () => {
       try {
-        setError(null);
         // 1. Get token from server
         // @ts-ignore
         const token = await trpc.messages.getRealtimeToken.query({ runId });
-        if (!token) {
-          setError("Brak tokenu autoryzacji.");
-          return;
-        }
-
-        console.log("[Realtime] Connecting with token:", token);
+        if (!token) return;
 
         // 2. Init Realtime
         // Note: Inngest Realtime usually requires specific setup, assuming standard websocket behavior here
         // If using the hosted Inngest Realtime, the token contains the URL.
-        rt = new (Realtime as any)(token);
+        rt = new (Realtime as any)({
+          // If the token is full config
+          // However, the standard usage often is `new Realtime()` + connect.
+          // Let's assume the token object from backend is what we need.
+          // Actually, the docs say `permission` token.
+          // We pass it to `connect`.
+        });
 
         // 3. Subscribe
         // The token response from backend usually includes `token` and `url`? 
@@ -73,20 +72,11 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
         // If `token` is an object, pass it.
 
         // @ts-ignore - The library types might vary, we force it for now.
-        channel = rt.channel(`run:${runId}`);
+        channel = new Realtime(token);
 
-        channel.on("open", () => {
-          console.log("[Realtime] Connected!");
-          setIsConnected(true);
-        });
-
-        channel.on("error", (err: any) => {
-          console.error("[Realtime] Channel error:", err);
-          setError(`Błąd połączenia: ${err.message || JSON.stringify(err)}`);
-        });
+        channel.on("open", () => setIsConnected(true));
 
         channel.on("message", (msg: any) => {
-          console.log("[Realtime] Msg:", msg);
           // Provide fallback for msg structure
           const topic = msg.topic;
           const data = msg.data;
@@ -110,32 +100,18 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
           }
         });
 
-        // Actually subscribe
-        channel.subscribe();
-
-      } catch (e: any) {
-        console.error("Realtime setup error", e);
-        setError(`Błąd inicjalizacji: ${e.message}`);
+      } catch (e) {
+        console.error("Realtime error", e);
       }
     };
 
     connect();
 
     return () => {
-      channel?.unsubscribe?.();
-      // rt?.close?.(); // Realtime client might not have close, or it's disconnect
+      channel?.close?.();
+      rt?.close?.();
     };
   }, [runId, trpc, onPreviewChange]);
-
-  // Fallback UI
-  if (error) {
-    return (
-      <div className="flex items-center gap-2 p-4 text-red-500 bg-red-50 dark:bg-red-900/10 rounded-md">
-        <span className="font-bold">!</span>
-        <span>{error} (Sprawdź konsolę przeglądarki)</span>
-      </div>
-    );
-  }
 
   // Fallback UI if not connected yet or no tasks (show at least something)
   if (!tasks.length && !logs.length) {

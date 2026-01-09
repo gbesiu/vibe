@@ -17,7 +17,6 @@ const LOADING_STEPS = [
 
 export const MessageLoading = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [startTime] = useState(Date.now());
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -64,15 +63,10 @@ export const MessageLoading = () => {
                   <Loader2 className="size-3.5 animate-spin text-primary" />
                 )}
               </div>
-              <span>
-                {step} {isCurrent && <span className="text-xs text-muted-foreground ml-2 font-normal">({Math.round((Date.now() - (startTime || Date.now())) / 1000)}s)</span>}
-              </span>
+              <span>{step}</span>
             </div>
           );
         })}
-        <div className="text-xs text-muted-foreground mt-2 pl-6 animate-pulse">
-          Szacowany czas: ~45s
-        </div>
       </div>
     </div>
   );

@@ -139,7 +139,6 @@ async function llmJSON(opts: {
   model: string;
   system: string;
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
-  logger?: (msg: string) => void;
 }): Promise<any> {
   const model = genAI.getGenerativeModel({
     model: "gemini-3-pro",
@@ -161,10 +160,7 @@ async function llmJSON(opts: {
     result = await model.generateContent({ contents });
   } catch (err: any) {
     if (opts.model === "gemini-3-pro" && (err.status === 429 || err.message?.includes("Exhausted"))) {
-      const msg = "[Gemini] ⚠️ Limit zapytań modelu 3-Pro (429). Przełączam na Gemini 1.5 Pro...";
-      console.warn(msg);
-      if (opts.logger) opts.logger(msg);
-
+      console.warn("[Gemini] 3-Pro exhausted, falling back to 1.5-pro");
       const fallbackModel = genAI.getGenerativeModel({
         model: "gemini-1.5-pro",
         generationConfig: { responseMimeType: "application/json" },
@@ -350,7 +346,6 @@ export const buildAppWorkflow = inngest.createFunction(
                   `Decyzja (JSON)?`,
               },
             ],
-            logger: async (msg) => await publishLog(publishFn, runId, msg),
           });
         });
 

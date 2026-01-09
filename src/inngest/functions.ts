@@ -16,15 +16,15 @@ interface AgentState {
 
 export const codeAgentFunction = inngest.createFunction(
   { id: "code-agent" },
-  { event: "code-agent/run" }, 
+  { event: "code-agent/run" },
   async ({ event, step }) => {
-    const sandboxId = await step.run("get-sandbox-id", async () => {
+    const sandboxId = await step.run("initialize-sandbox", async () => {
       const sandbox = await Sandbox.create("vibe-code-fotz");
       await sandbox.setTimeout(SANDBOX_TIMEOUT);
       return sandbox.sandboxId;
     });
 
-    const previousMessages = await step.run("get-previous-messages", async () => {
+    const previousMessages = await step.run("analyze-history", async () => {
       const formattedMessages: Message[] = [];
 
       const messages = await prisma.message.findMany({
@@ -56,16 +56,16 @@ export const codeAgentFunction = inngest.createFunction(
       {
         messages: previousMessages,
       },
-    ); 
+    );
 
     const codeAgent = createAgent<AgentState>({
       name: "code-agent",
       description: "An expert coding agent",
       system: PROMPT,
-      model: gemini({ 
+      model: gemini({
         model: "gemini-2.5-pro",
         defaultParameters: {
-//          temperature: 0.1,
+          //          temperature: 0.1,
         },
       }),
       tools: [
@@ -195,7 +195,7 @@ export const codeAgentFunction = inngest.createFunction(
       name: "fragment-title-generator",
       description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
-      model: gemini({ 
+      model: gemini({
         model: "gemini-2.5-pro",
       }),
     })
@@ -204,15 +204,15 @@ export const codeAgentFunction = inngest.createFunction(
       name: "response-generator",
       description: "A response generator",
       system: RESPONSE_PROMPT,
-      model: gemini({ 
-        model: "gemini-2.5-pro", 
+      model: gemini({
+        model: "gemini-2.5-pro",
       }),
     });
 
-    const { 
+    const {
       output: fragmentTitleOuput
     } = await fragmentTitleGenerator.run(result.state.data.summary);
-    const { 
+    const {
       output: responseOutput
     } = await responseGenerator.run(result.state.data.summary);
 
@@ -261,7 +261,7 @@ export const codeAgentFunction = inngest.createFunction(
     });
 
 
-    return { 
+    return {
       url: sandboxUrl,
       title: "Fragment",
       files: result.state.data.files,

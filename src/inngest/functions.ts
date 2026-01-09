@@ -141,7 +141,7 @@ async function llmJSON(opts: {
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
 }): Promise<any> {
   const model = genAI.getGenerativeModel({
-    model: "gemini-3-pro",
+    model: "gemini-1.5-pro",
     generationConfig: {
       responseMimeType: "application/json",
     },
@@ -182,7 +182,7 @@ async function llmText(opts: {
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
 }): Promise<string> {
   const model = genAI.getGenerativeModel({
-    model: "gemini-3-pro",
+    model: "gemini-1.5-pro",
     systemInstruction: opts.system,
   });
 

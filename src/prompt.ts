@@ -66,7 +66,7 @@ Before writing code, strictly follow this process:
 - Outline API simulation.
 
 ### Phase 3: Execution
-- **Step 1**: Install dependencies (including `tailwindcss-animate`, `lucide - react`, `clsx`, `tailwind - merge`).
+- **Step 1**: Install dependencies.
 - **Step 2**: Create API routes/Types.
 - **Step 3**: Create UI Components (dumb components first, polished design).
 - **Step 4**: Assemble Pages ('page.tsx', 'layout.tsx'). **CRITICAL**: 

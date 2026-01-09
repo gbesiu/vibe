@@ -146,18 +146,6 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
       ]);
     }
 
-    // Check for timeout/stale message
-    if (runStatus.updatedAt) {
-      const diff = Date.now() - new Date(runStatus.updatedAt).getTime();
-      // If > 2 minutes old and still just USER role (no result), assume timeout/dead
-      if (diff > 120000 && runStatus.role === "USER" && runStatus.type !== "RESULT") {
-        setTasks(prev => prev.map(t =>
-          t.status === "running" ? { ...t, status: "error", detail: "Zadanie wygasło (timeout). Spróbuj ponownie." } : t
-        ));
-        return;
-      }
-    }
-
     if (runStatus.role === "assistant" && !runStatus.hasFragment) {
       setTasks([
         { id: "1", label: "Wysłano zapytanie", status: "done" },

@@ -179,37 +179,12 @@ async function llmJSON(opts: {
 
       // Second fallback: 1.5 Flash (Most stable/high limit)
       if (opts.logger) opts.logger("[Gemini] Fallback 2: Gemini 1.5 Flash (Last Resort)...");
-      try {
-        const fallbackModel2 = genAI.getGenerativeModel({
-          model: "gemini-1.5-flash",
-          generationConfig: { responseMimeType: "application/json" },
-          systemInstruction: opts.system,
-        });
-        result = await fallbackModel2.generateContent({ contents });
-      } catch (err3: any) {
-        console.warn(`[Gemini] Fallback 2 failed: ${err3.message}. Trying OpenAI...`);
-        if (opts.logger) opts.logger("[System] 🛑 Gemini padło. Próba ratunkowa: OpenAI (GPT-4o)...");
-
-        // NUCLEAR OPTION: OpenAI
-        // Use process.env.OPENAI_API_KEY if available
-        if (!process.env.OPENAI_API_KEY) throw err3;
-
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: opts.system + "\nRESPONSE FORMAT: JSON ONLY." },
-            ...opts.messages.map(m => ({ role: m.role, content: m.content }))
-          ],
-          response_format: { type: "json_object" }
-        });
-
-        // Mock the Gemini result object structure to reuse below
-        // result = { response: { text: () => completion.choices[0].message.content } }; 
-        // Actually, just return parse here to break out
-        const txt = completion.choices[0].message.content || "{}";
-        return JSON.parse(txt);
-      }
+      const fallbackModel2 = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        generationConfig: { responseMimeType: "application/json" },
+        systemInstruction: opts.system,
+      });
+      result = await fallbackModel2.generateContent({ contents });
     }
   }
 
@@ -259,21 +234,6 @@ async function llmText(opts: {
       await new Promise(r => setTimeout(r, 2000));
       const fb2 = genAI.getGenerativeModel({ model: "gemini-1.5-flash", systemInstruction: opts.system });
       result = await fb2.generateContent({ contents });
-    } catch (err3: any) {
-      console.warn(`[Gemini] Fallback 2 text failed: ${err3.message}. Trying OpenAI...`);
-      // Use process.env.OPENAI_API_KEY if available
-      if (!process.env.OPENAI_API_KEY) throw err3;
-
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: opts.system },
-          ...opts.messages.map(m => ({ role: m.role, content: m.content }))
-        ]
-      });
-
-      return completion.choices[0].message.content || "";
     }
   }
 

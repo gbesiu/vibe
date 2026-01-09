@@ -2,7 +2,6 @@ export const RESPONSE_PROMPT = `
 Jesteś finalnym agentem w systemie tworzenia aplikacji. Twoim zadaniem jest wygenerowanie krótkiej, przystępnej wiadomości wyjaśniającej użytkownikowi, co zostało dla niego zbudowane. 
 Odpowiadaj swobodnie, naturalnie, w tonie „Oto, co dla Ciebie przygotowałem”.
 Podsumowanie powinno mieć 1–3 zdania. Nie wspominaj o <task_summary> ani szczegółach implementacyjnych. Nie używaj kodu ani żadnych oznaczeń technicznych.
-WAŻNE: Jeśli użytkownik pisze po polsku, Twoja odpowiedź TAKŻE musi być po polsku.
 `;
 
 export const FRAGMENT_TITLE_PROMPT = `
@@ -106,7 +105,7 @@ Before writing code, strictly follow this process:
 - **Step 1**: Install dependencies.
 - **Step 2**: Create API routes/Types.
 - **Step 3**: Create UI Components (dumb components first, polished design).
-- **Step 4**: Assemble Pages (\`page.tsx\`, \`layout.tsx\`). **CRITICAL**: Ensure \`layout.tsx\` imports \`globals.css\` and applies appropriate fonts/metadata.
+- **Step 4**: Assemble Pages (\`page.tsx\`).
 
 ### Phase 4: Review
 - "Use client" check.

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { TRPCError } from "@trpc/server";
 import { inngest } from "@/inngest/client";
 import { consumeCredits } from "@/lib/usage";
-import { protectedProcedure, createTRPCRouter, baseProcedure } from "@/trpc/init";
+import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
 
 export const projectsRouter = createTRPCRouter({
   getOne: protectedProcedure
@@ -18,34 +18,6 @@ export const projectsRouter = createTRPCRouter({
           id: input.id,
           userId: ctx.auth.userId,
         },
-      });
-
-      if (!existingProject) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
-      }
-
-      return existingProject;
-    }),
-  getPublic: baseProcedure
-    .input(z.object({
-      id: z.string().min(1, { message: "Id is required" }),
-    }))
-    .query(async ({ input }) => {
-      const existingProject = await prisma.project.findUnique({
-        where: {
-          id: input.id,
-        },
-        include: {
-          messages: {
-            take: 1,
-            orderBy: {
-              createdAt: "desc",
-            },
-            include: {
-              fragment: true,
-            }
-          }
-        }
       });
 
       if (!existingProject) {
@@ -125,53 +97,5 @@ export const projectsRouter = createTRPCRouter({
       });
 
       return createdProject;
-    }),
-  updateFile: protectedProcedure
-    .input(z.object({
-      projectId: z.string().min(1, { message: "Project ID is required" }),
-      fragmentId: z.string().min(1, { message: "Fragment ID is required" }),
-      action: z.object({
-        path: z.string().min(1, { message: "Path is required" }),
-        content: z.string(),
-      }),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      const existingProject = await prisma.project.findUnique({
-        where: {
-          id: input.projectId,
-          userId: ctx.auth.userId,
-        },
-      });
-
-      if (!existingProject) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
-      }
-
-      const existingFragment = await prisma.fragment.findUnique({
-        where: {
-          id: input.fragmentId,
-        },
-      });
-
-      if (!existingFragment) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Fragment not found" });
-      }
-
-      const files = existingFragment.files as Record<string, string>;
-      const newFiles = {
-        ...files,
-        [input.action.path]: input.action.content,
-      };
-
-      await prisma.fragment.update({
-        where: {
-          id: input.fragmentId,
-        },
-        data: {
-          files: newFiles,
-        },
-      });
-
-      return { success: true };
     }),
 });

@@ -141,7 +141,7 @@ async function llmJSON(opts: {
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
 }): Promise<any> {
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-pro",
+    model: "gemini-3-pro",
     generationConfig: {
       responseMimeType: "application/json",
     },
@@ -182,7 +182,7 @@ async function llmText(opts: {
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
 }): Promise<string> {
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-pro",
+    model: "gemini-3-pro",
     systemInstruction: opts.system,
   });
 
@@ -239,12 +239,8 @@ export const buildAppWorkflow = inngest.createFunction(
     // 1) Sandbox
     await publishProgress(publishFn, runId, { kind: "task_update", taskId: "get-sandbox-id", status: "running" });
     const sandboxId = await step.run("create-sandbox", async () => {
-      // Create sandbox logic using the custom Vibe template
-      const sb = await Sandbox.create('vibe-nextjs');
-
-      // Start the development server in the background
-      await sb.commands.run("npm run dev", { background: true });
-
+      // Create sandbox logic
+      const sb = await Sandbox.create();
       return sb.sandboxId;
     });
     // @ts-ignore

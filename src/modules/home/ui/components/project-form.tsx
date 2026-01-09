@@ -35,7 +35,7 @@ export const ProjectForm = () => {
       value: "",
     },
   });
-
+  
   const createProject = useMutation(trpc.projects.create.mutationOptions({
     onSuccess: (data) => {
       queryClient.invalidateQueries(
@@ -47,10 +47,8 @@ export const ProjectForm = () => {
       router.push(`/projects/${data.id}`);
     },
     onError: (error) => {
-      console.error("[CreateProject] Error:", error);
-      const msg = error.message || "Wystąpił nieznany błąd";
-      toast.error(msg);
-
+      toast.error(error.message);
+      
       if (error.data?.code === "UNAUTHORIZED") {
         clerk.openSignIn();
       }
@@ -60,7 +58,7 @@ export const ProjectForm = () => {
       }
     },
   }));
-
+  
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     await createProject.mutateAsync({
       value: values.value,
@@ -74,7 +72,7 @@ export const ProjectForm = () => {
       shouldTouch: true,
     });
   };
-
+  
   const [isFocused, setIsFocused] = useState(false);
   const isPending = createProject.isPending;
   const isButtonDisabled = isPending || !form.formState.isValid;
@@ -135,7 +133,7 @@ export const ProjectForm = () => {
         </form>
         <div className="flex-wrap justify-center gap-2 hidden md:flex max-w-3xl">
           {PROJECT_TEMPLATES.map((template) => (
-            <Button
+            <Button 
               key={template.title}
               variant="outline"
               size="sm"

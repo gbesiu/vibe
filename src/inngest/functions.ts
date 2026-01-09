@@ -178,9 +178,10 @@ async function llmText(opts: {
 export const buildAppWorkflow = inngest.createFunction(
   { id: "vibe-app-build-workflow" },
   { event: "vibe/app.build.requested" },
-  async ({ event, step, publish }) => {
-    // Inngest Realtime publish function
-    const publishFn = publish || (async (msg: any) => { });
+  async ({ event, step }) => {
+
+    // @ts-ignore
+    const publishFn = arguments[0].publish || (async (msg) => { });
 
     const runId = event.data.runId;
     const userId = event.data.userId;
@@ -190,10 +191,7 @@ export const buildAppWorkflow = inngest.createFunction(
     const model = event.data.model || "gpt-4o-mini";
     const maxIterations = event.data.maxIterations || 18;
 
-    console.log("!!! BuildAppWorkflow Triggered !!!", { runId, userId, prompt });
-
     if (!runId || !prompt) {
-      console.error("!!! Missing runId or prompt !!!");
       throw new Error("Missing runId or prompt");
     }
 

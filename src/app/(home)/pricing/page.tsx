@@ -21,9 +21,9 @@ const Page = () => {
             className="hidden md:block"
           />
         </div>
-        <h1 className="text-xl md:text-3xl font-bold text-center">Pricing</h1>
+        <h1 className="text-xl md:text-3xl font-bold text-center">Cennik</h1>
         <p className="text-muted-foreground text-center text-sm md:text-base">
-          Choose the plan that fits your needs
+          Wybierz plan, który pasuje do Twoich potrzeb
         </p>
         <PricingTable
           appearance={{

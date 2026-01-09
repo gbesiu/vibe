@@ -1,50 +1,50 @@
 export const PROJECT_TEMPLATES = [
   {
     emoji: "🎬",
-    title: "Build a Netflix clone",
+    title: "Klon Netflix",
     prompt:
-      "Build a Netflix-style homepage with a hero banner (use a nice, dark-mode compatible gradient here), movie sections, responsive cards, and a modal for viewing details using mock data and local state. Use dark mode.",
+      "Buduj stronę główną w stylu Netflix z hero bannerem (użyj ładnego, kompatybilnego z ciemnym trybem gradientu), sekcjami filmów, responsywnymi kartami i modalem do przeglądania szczegółów używając mock-owych danych i stanu lokalnego. Użyj trybu ciemnego.",
   },
   {
     emoji: "📦",
-    title: "Build an admin dashboard",
+    title: "Panel administratora",
     prompt:
-      "Create an admin dashboard with a sidebar, stat cards, a chart placeholder, and a basic table with filter and pagination using local state. Use clear visual grouping and balance in your design for a modern, professional look.",
+      "Stwórz panel administratora z paskiem bocznym, kartami statystyk, placeholderem wykresu i podstawową tabelą z filtrowaniem i paginacją używając stanu lokalnego. Użyj wyraźnego grupowania wizualnego i równowagi w designie na nowoczesny, profesjonalny wygląd.",
   },
   {
     emoji: "📋",
-    title: "Build a kanban board",
+    title: "Tablica Kanban",
     prompt:
-      "Build a kanban board with drag-and-drop using react-beautiful-dnd and support for adding and removing tasks with local state. Use consistent spacing, column widths, and hover effects for a polished UI.",
+      "Buduj tablicę Kanban z drag-and-drop używając react-beautiful-dnd i wsparcie dla dodawania i usuwania tasków ze stanem lokalnym. Użyj konsystentnego rozstawu, szerokości kolumn i efektów hover dla wyrafinowanego interfejsu.",
   },
   {
     emoji: "🗂️",
-    title: "Build a file manager",
+    title: "Menedżer plików",
     prompt:
-      "Build a file manager with folder list, file grid, and options to rename or delete items using mock data and local state. Focus on spacing, clear icons, and visual distinction between folders and files.",
+      "Stwórz menedżer plików z listą folderów, siatką plików i opcjami do zmiany nazwy lub usunięcia elementów używając mock-owych danych i stanu lokalnego. Skup się na odstępach, jasnych ikonach i wizualnym rozróżnieniu między folderami i plikami.",
   },
   {
     emoji: "📺",
-    title: "Build a YouTube clone",
+    title: "Klon YouTube",
     prompt:
-      "Build a YouTube-style homepage with mock video thumbnails, a category sidebar, and a modal preview with title and description using local state. Ensure clean alignment and a well-organized grid layout.",
+      "Buduj stronę główną w stylu YouTube z mock-owymi miniaturkami wideo, paskiem bocznym kategorii i modalnym podglądem z tytułem i opisem używając stanu lokalnego. Zapewnij czystą wyrównanie i dobrze zorganizowaną siatkę.",
   },
   {
     emoji: "🛍️",
-    title: "Build a store page",
+    title: "Strona sklepu",
     prompt:
-      "Build a store page with category filters, a product grid, and local cart logic to add and remove items. Focus on clear typography, spacing, and button states for a great e-commerce UI.",
+      "Stwórz stronę sklepu z filtrami kategorii, siatką produktów i logika lokalnego koszyka do dodawania i usuwania artykułów. Skup się na wyraźnej typografii, odstępach i stanach przycisków dla świetnego interfejsu e-commerce.",
   },
   {
     emoji: "🏡",
-    title: "Build an Airbnb clone",
+    title: "Klon Airbnb",
     prompt:
-      "Build an Airbnb-style listings grid with mock data, filter sidebar, and a modal with property details using local state. Use card spacing, soft shadows, and clean layout for a welcoming design.",
+      "Buduj siatkę ogłoszeń w stylu Airbnb z mock-owymi danymi, paskiem bocznym filtrów i modalem ze szczegółami nieruchomości używając stanu lokalnego. Użyj odstępów karty, miękkich cieni i czystego układu na zapraszający design.",
   },
   {
     emoji: "🎵",
-    title: "Build a Spotify clone",
+    title: "Klon Spotify",
     prompt:
-      "Build a Spotify-style music player with a sidebar for playlists, a main area for song details, and playback controls. Use local state for managing playback and song selection. Prioritize layout balance and intuitive control placement for a smooth user experience. Use dark mode.",
+      "Stwórz odtwarzacz muzyki w stylu Spotify z paskiem bocznym do playlist, głównym obszarem dla szczegółów piosenki i kontrolkami odtwarzania. Użyj stanu lokalnego do zarządzania odtwarzaniem i wyborze piosenki. Ustal priorytet dla równowagi układu i intuicyjnego umieszczenia kontrolek dla płynnego doświadczenia użytkownika. Użyj trybu ciemnego.",
   }
 ] as const;

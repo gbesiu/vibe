@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
+import { subscribe } from "@inngest/realtime";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Loader2, Terminal, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,101 +50,63 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
   useEffect(() => {
     if (!token) return;
 
-    let ws: WebSocket | null = null;
+    let cleanup: (() => void) | undefined;
 
     const connect = async () => {
       try {
         setError(null);
-        console.log("[Realtime] Token received:", token);
-        console.log("[Realtime] Token keys:", Object.keys(token || {}));
-        console.log("[Realtime] Token structure:", JSON.stringify(token, null, 2));
+        console.log("[Realtime] Connecting with token:", token);
 
-        // Extract WebSocket URL from token
-        // Token structure from Inngest usually contains: { url, token, ... }
-        const wsUrl = (token as any)?.url || (token as any)?.wsUrl;
-        const authToken = (token as any)?.token || token;
-
-        if (!wsUrl) {
-          throw new Error("Token nie zawiera URL do WebSocket. Struktura tokenu: " + JSON.stringify(Object.keys(token || {})));
-        }
-
-        console.log("[Realtime] Connecting to WebSocket:", wsUrl);
-
-        // Create native WebSocket connection
-        ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-          console.log("[Realtime] WebSocket connected!");
-          setIsConnected(true);
-
-          // Subscribe to channel with topics
-          const subscribeMessage = {
-            type: "subscribe",
+        // subscribe() returns Promise and accepts callback
+        const subscription = await subscribe(
+          {
+            app: token,
             channel: `run:${runId}`,
             topics: ["progress", "log", "preview"],
-            token: authToken
-          };
+          },
+          (event) => {
+            // This callback fires on each message
+            console.log("[Realtime] Event received:", event);
 
-          console.log("[Realtime] Sending subscribe:", subscribeMessage);
-          ws?.send(JSON.stringify(subscribeMessage));
-        };
+            const topic = event.topic;
+            const data = event.data;
 
-        ws.onmessage = (event) => {
-          try {
-            console.log("[Realtime] Message received:", event.data);
-            const message = JSON.parse(event.data);
-
-            // Handle different message types
-            if (message.type === "event" || message.topic) {
-              const topic = message.topic;
-              const data = message.data || message.payload;
-
-              console.log("[Realtime] Event:", { topic, data });
-
-              if (topic === "log") {
-                setLogs(prev => [...prev, data.line].slice(-50));
+            if (topic === "log") {
+              setLogs(prev => [...prev, data.line].slice(-50));
+            }
+            if (topic === "progress") {
+              const payload = data;
+              if (payload.kind === "init") {
+                setTasks(payload.tasks);
               }
-              if (topic === "progress") {
-                const payload = data;
-                if (payload.kind === "init") {
-                  setTasks(payload.tasks);
-                }
-                if (payload.kind === "task_update") {
-                  setTasks(prev => prev.map(t =>
-                    t.id === payload.taskId ? { ...t, status: payload.status, detail: payload.detail } : t
-                  ));
-                }
-              }
-              if (topic === "preview" && data.kind === "preview_update") {
-                onPreviewChange?.();
+              if (payload.kind === "task_update") {
+                setTasks(prev => prev.map(t =>
+                  t.id === payload.taskId ? { ...t, status: payload.status, detail: payload.detail } : t
+                ));
               }
             }
-          } catch (e) {
-            console.error("[Realtime] Failed to parse message:", e, event.data);
+            if (topic === "preview" && data.kind === "preview_update") {
+              onPreviewChange?.();
+            }
+          }
+        );
+
+        console.log("[Realtime] Subscription created:", subscription);
+        setIsConnected(true);
+
+        // Store cleanup function
+        cleanup = () => {
+          console.log("[Realtime] Cleaning up subscription");
+          // Subscription might have close() or unsubscribe() method
+          if (typeof subscription === 'object' && subscription !== null) {
+            (subscription as any).close?.();
+            (subscription as any).unsubscribe?.();
           }
         };
 
-        ws.onerror = (error) => {
-          console.error("[Realtime] WebSocket error:", error);
-          setError(`Błąd WebSocket: ${error.type}`);
-          setIsConnected(false);
-        };
-
-        ws.onclose = (event) => {
-          console.log("[Realtime] WebSocket closed:", event.code, event.reason);
-          setIsConnected(false);
-        };
-
       } catch (e: any) {
-        console.error("Realtime setup error - FULL:", e);
-        console.error("Error details:", {
-          name: e?.name,
-          message: e?.message,
-          stack: e?.stack
-        });
-
-        const errorMsg = e?.message || e?.toString?.() || "Unknown error";
-        setError(`Błąd inicjalizacji: ${errorMsg}`);
+        console.error("Realtime setup error", e);
+        setError(`Błąd inicjalizacji: ${e.message}`);
         setIsConnected(false);
       }
     };
@@ -151,11 +114,7 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
     connect();
 
     return () => {
-      if (ws) {
-        console.log("[Realtime] Closing WebSocket");
-        ws.close();
-        ws = null;
-      }
+      cleanup?.();
     };
   }, [token, runId, onPreviewChange]);
 

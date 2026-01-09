@@ -16,6 +16,8 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 
+import { toast } from "sonner";
+import { useTRPC } from "@/trpc/client";
 import { FragmentWeb } from "../components/fragment-web";
 import { ProjectHeader } from "../components/project-header";
 import { MessagesContainer } from "../components/messages-container";
@@ -26,11 +28,50 @@ interface Props {
 };
 
 export const ProjectView = ({ projectId }: Props) => {
+  const trpc = useTRPC();
   const { has } = useAuth();
   const hasProAccess = has?.({ plan: "pro" });
 
   const [activeFragment, setActiveFragment] = useState<Fragment | null>(null);
   const [tabState, setTabState] = useState<"preview" | "code">("preview");
+
+  const updateFileAnimation = trpc.projects.updateFile.useMutation({
+    onSuccess: () => {
+      toast.success("File saved successfully");
+    },
+    onError: () => {
+      toast.error("Failed to save file");
+    }
+  });
+
+  const handleSaveFile = async (path: string, content: string) => {
+    if (!activeFragment) return;
+
+    try {
+      await updateFileAnimation.mutateAsync({
+        projectId,
+        fragmentId: activeFragment.id,
+        action: {
+          path,
+          content,
+        }
+      });
+
+      // Optimistically update local state
+      setActiveFragment((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          files: {
+            ...(prev.files as Record<string, string>),
+            [path]: content,
+          }
+        };
+      });
+    } catch (error) {
+      // Error handled by mutation callbacks
+    }
+  };
 
   return (
     <div className="h-screen">
@@ -93,6 +134,8 @@ export const ProjectView = ({ projectId }: Props) => {
               {!!activeFragment?.files && (
                 <FileExplorer
                   files={activeFragment.files as { [path: string]: string }}
+                  onSave={handleSaveFile}
+                  isSaving={updateFileAnimation.isPending}
                 />
               )}
             </TabsContent>

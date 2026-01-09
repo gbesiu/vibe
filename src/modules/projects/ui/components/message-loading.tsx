@@ -218,28 +218,21 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
 
       <div className="pl-8.5 flex flex-col gap-y-2">
 
-        {/* Task Checklist */}
-        <div className="flex flex-col gap-2 mt-2">
-          {tasks.map((task) => (
-            <div key={task.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm">
-              <div className="shrink-0 mt-0.5">
-                {task.status === "done" && <Check className="size-4 text-green-500" />}
-                {task.status === "running" && <Loader2 className="size-4 animate-spin text-blue-500" />}
-                {task.status === "queued" && <div className="size-4 rounded-full border-2 border-muted" />}
-                {task.status === "error" && <div className="size-4 rounded-full border-2 border-red-500 text-red-500 flex items-center justify-center font-bold text-[10px]">!</div>}
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className={cn("font-medium", task.status === "done" && "text-muted-foreground", task.status === "running" && "text-foreground")}>
-                  {task.label}
-                </span>
-                {task.detail && (
-                  <span className="text-xs text-muted-foreground">
-                    {task.detail}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+        {/* Active Task Highlight */}
+        {displayTask && (
+          <div className="flex items-center gap-2 text-sm text-foreground font-medium animate-in fade-in slide-in-from-left-2">
+            <Loader2 className="size-3.5 animate-spin text-primary" />
+            <span>{displayTask.label}</span>
+            {displayTask.detail && <span className="text-xs text-muted-foreground font-normal">({displayTask.detail})</span>}
+          </div>
+        )}
+
+        {/* ProgressBar roughly based on tasks done */}
+        <div className="h-1 w-full bg-muted rounded overflow-hidden mt-1">
+          <div
+            className="h-full bg-primary transition-all duration-500"
+            style={{ width: `${(tasks.filter(t => t.status === 'done').length / Math.max(tasks.length, 1)) * 100}%` }}
+          />
         </div>
 
         {/* Logs Accordion */}

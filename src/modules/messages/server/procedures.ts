@@ -8,7 +8,7 @@ import { consumeCredits } from "@/lib/usage";
 
 export const messagesRouter = createTRPCRouter({
   getMany: protectedProcedure
-    .input(
+  .input(
       z.object({
         projectId: z.string().min(1, { message: "Project ID is required" }),
       }),
@@ -74,12 +74,10 @@ export const messagesRouter = createTRPCRouter({
       });
 
       await inngest.send({
-        name: "vibe/app.build.requested",
+        name: "code-agent/run",
         data: {
-          runId: createdMessage.id,
-          userId: ctx.auth.userId,
+          value: input.value,
           projectId: input.projectId,
-          prompt: input.value,
         },
       });
 

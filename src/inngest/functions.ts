@@ -1,6 +1,6 @@
+/* eslint-disable no-console */
 import { z } from "zod";
 import OpenAI from "openai";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Sandbox } from "@e2b/code-interpreter";
 
 import { inngest } from "@/inngest/client";
@@ -125,74 +125,50 @@ async function toolReadFiles(
 }
 
 /* =========================
-   7) LLM helper (Gemini)
+   7) LLM helper (OpenAI)
    ========================= */
 
-// Support provided API key or env var
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyA2QU9Sua1k8KsDBcQsw9JNKHqE7eFf_VI";
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "dummy" });
 
 async function llmJSON(opts: {
   model: string;
   system: string;
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
 }): Promise<any> {
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-pro",
-    generationConfig: {
-      responseMimeType: "application/json",
-    },
-    systemInstruction: opts.system,
+  // Retry logic could go here
+  const res = await openai.chat.completions.create({
+    model: opts.model,
+    temperature: 0.2, // Low temp for stability
+    messages: [
+      { role: "system", content: opts.system },
+      ...opts.messages,
+    ],
+    response_format: { type: "json_object" },
   });
 
-  // Convert messages to Gemini format (simplistic chat history)
-  // Gemini expects: { role: 'user' | 'model', parts: [{ text: string }] }
-  const contents = opts.messages.map(m => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
-  })).filter(m => m.role !== "system"); // System is already in systemInstruction
-
-  const result = await model.generateContent({
-    contents,
-  });
-
-  const response = result.response;
-  const content = response.text();
-
+  const content = res.choices[0]?.message?.content ?? "{}";
   try {
     return JSON.parse(content);
-  } catch (err) {
-    console.error("[Gemini] JSON Parse Error:", err, content);
-    // Fallback logic
-    return {
-      type: "tool",
-      tool: "readFiles",
-      input: { paths: ["/app/page.tsx"] },
-      summary: "JSON parse error from Gemini, falling back to read."
-    };
+  } catch {
+    // Fallback if JSON is broken
+    return { type: "tool", tool: "readFiles", input: { paths: ["/app/page.tsx"] }, summary: "JSON parse error, fallback to readFiles." };
   }
 }
 
 async function llmText(opts: {
   model: string;
   system: string;
-  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+  user: string;
 }): Promise<string> {
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-pro",
-    systemInstruction: opts.system,
+  const res = await openai.chat.completions.create({
+    model: opts.model,
+    temperature: 0.4,
+    messages: [
+      { role: "system", content: opts.system },
+      { role: "user", content: opts.user },
+    ],
   });
-
-  const contents = opts.messages.map(m => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
-  })).filter(m => m.role !== "system");
-
-  const result = await model.generateContent({
-    contents,
-  });
-
-  return result.response.text();
+  return (res.choices[0]?.message?.content ?? "").trim();
 }
 
 /* =========================
@@ -389,7 +365,7 @@ export const buildAppWorkflow = inngest.createFunction(
       const title = await llmText({
         model,
         system: "Generator Tytułów",
-        messages: [{ role: "user", content: `${FRAGMENT_TITLE_PROMPT}\n\nPodsumowanie:\n${taskSummary}` }],
+        user: `${FRAGMENT_TITLE_PROMPT}\n\nPodsumowanie:\n${taskSummary}`,
       });
       return title.replace(/[^\p{L}\p{N}\s]/gu, "").trim().slice(0, 50);
     });
@@ -401,7 +377,7 @@ export const buildAppWorkflow = inngest.createFunction(
       return await llmText({
         model,
         system: RESPONSE_PROMPT,
-        messages: [{ role: "user", content: `Podsumowanie prac:\n${taskSummary}\n\nWygeneruj odpowiedź dla użytkownika.` }],
+        user: `Podsumowanie prac:\n${taskSummary}\n\nWygeneruj odpowiedź dla użytkownika.`,
       });
     });
     await publishProgress(publishFn, runId, { kind: "task_update", taskId: "response", status: "done" });

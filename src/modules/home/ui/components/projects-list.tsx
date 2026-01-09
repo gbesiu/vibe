@@ -40,7 +40,7 @@ export const ProjectsList = () => {
               <div className="flex items-center gap-x-4">
                 <Image
                   src="/logo.svg"
-                  alt="Vibe"
+                  alt="Przekod"
                   width={32}
                   height={32}
                   className="object-contain"

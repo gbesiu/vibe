@@ -41,7 +41,7 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
         setError(null);
         // 1. Get token from server
         // @ts-ignore
-        const token = await trpc.messages.getRealtimeToken.fetch({ runId });
+        const token = await trpc.messages.getRealtimeToken.query({ runId });
         if (!token) {
           setError("Brak tokenu autoryzacji.");
           return;

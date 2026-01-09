@@ -128,12 +128,9 @@ async function toolReadFiles(
    7) LLM helper (Gemini)
    ========================= */
 
-// Support API key from env var
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  console.warn("[Gemini] GEMINI_API_KEY is missing from environment variables");
-}
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "dummy-key");
+// Support provided API key or env var
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyA2QU9Sua1k8KsDBcQsw9JNKHqE7eFf_VI";
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 async function llmJSON(opts: {
   model: string;

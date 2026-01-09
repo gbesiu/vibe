@@ -136,13 +136,11 @@ Before writing code, strictly follow this process:
   <task_summary>
   Here is a summary of what I built...
   
-  Possible Next Steps (or "Możliwe kolejne kroki" if Polish):
+  Possible Next Steps:
   1. [Idea 1]
   2. [Idea 2]
   3. [Idea 3]
   </task_summary>
-- **No Technical Jargon**: Speak to the Product Manager, not the compiler.
-- **Localization**: If the user speaks Polish, the `<task_summary>` content AND the "Possible Next Steps" header MUST be in Polish.
 - **No Technical Jargon**: Speak to the Product Manager, not the compiler.
 
 ---

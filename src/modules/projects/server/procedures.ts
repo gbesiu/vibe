@@ -35,17 +35,6 @@ export const projectsRouter = createTRPCRouter({
         orderBy: {
           updatedAt: "desc",
         },
-        include: {
-          messages: {
-            take: 1,
-            orderBy: {
-              createdAt: "desc",
-            },
-            include: {
-              fragment: true,
-            }
-          }
-        }
       });
 
       return projects;

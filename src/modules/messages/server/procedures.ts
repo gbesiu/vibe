@@ -86,7 +86,7 @@ export const messagesRouter = createTRPCRouter({
 
       return createdMessage;
     }),
-  getRealtimeTokenV2: protectedProcedure
+  getRealtimeToken: protectedProcedure
     .input(z.object({ runId: z.string() }))
     .query(async ({ input }) => {
       return await getRunSubscriptionToken({ runId: input.runId });

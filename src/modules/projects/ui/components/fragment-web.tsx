@@ -9,10 +9,9 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
   data: Fragment;
-  refreshKey?: number;
 };
 
-export function FragmentWeb({ data, refreshKey = 0 }: Props) {
+export function FragmentWeb({ data }: Props) {
   const [copied, setCopied] = useState(false);
   const [fragmentKey, setFragmentKey] = useState(0);
 
@@ -62,7 +61,7 @@ export function FragmentWeb({ data, refreshKey = 0 }: Props) {
         </Hint>
       </div>
       <iframe
-        key={`${fragmentKey}-${refreshKey}`}
+        key={fragmentKey}
         className="h-full w-full"
         sandbox="allow-forms allow-scripts allow-same-origin"
         loading="lazy"

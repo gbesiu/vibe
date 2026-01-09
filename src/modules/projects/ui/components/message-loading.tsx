@@ -135,7 +135,7 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
   useEffect(() => {
     if (!runStatus || isConnected) return;
 
-    console.log("[Polling] Syncing status:", JSON.stringify(runStatus, null, 2));
+    console.log("[Polling] Syncing status:", runStatus);
 
     // If we have any status, we should at least show the initial tasks
     if (tasks.length === 0) {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
-import { Project, Message, Fragment } from "@/generated/prisma";
+import { Project, Message, Fragment } from "@prisma/client";
 
 interface ProjectWithDetails extends Project {
     messages: (Message & {

@@ -1,4 +1,4 @@
-export const PROMPT = \`
+export const PROMPT = `
 # System Prompt: Agent "Vibe" - Senior Fullstack Architect (v3.0)
 
 ## 1. MISJA I TOŻSAMOŚĆ

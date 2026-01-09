@@ -2,25 +2,60 @@
 import { z } from "zod";
 import OpenAI from "openai";
 import { Sandbox } from "@e2b/code-interpreter";
+import { getSubscriptionToken, Realtime } from "@inngest/realtime";
 
 import { inngest } from "@/inngest/client";
 import { PROMPT as SYSTEM_PROMPT, RESPONSE_PROMPT, FRAGMENT_TITLE_PROMPT } from "@/prompt";
 import { prisma } from "@/lib/db";
 
-import {
-  runChannel,
-  RUN_TOPICS,
-  publishPreview,
-  publishProgress,
-  publishLog,
-  publishResult,
-  ProgressTask,
-  ProgressPayload,
-  LogPayload,
-  ResultPayload,
-  RunRealtimeToken,
-  RunTopic
-} from "./helpers";
+/* =========================
+   0) Realtime channel typing
+   ========================= */
+
+export const runChannel = (runId: string) => `run:${runId}` as const;
+// Added "preview" topic
+export const RUN_TOPICS = ["progress", "log", "result", "preview"] as const;
+export type RunTopic = (typeof RUN_TOPICS)[number];
+
+export type RunRealtimeToken = any;
+
+// ... (getRunSubscriptionToken remains same)
+
+/* =========================
+   3) Realtime message shapes
+   ========================= */
+// ... existing types
+type PreviewPayload = { kind: "preview_update" };
+
+// ...
+
+/* =========================
+   5) Helpers
+   ========================= */
+
+async function publishPreview(publish: (msg: any) => Promise<any>, runId: string) {
+  await publish({
+    channel: runChannel(runId),
+    topic: "preview",
+    data: { kind: "preview_update" } satisfies PreviewPayload,
+  });
+}
+
+// ... existing helpers ...
+
+
+/**
+ * Server action / server function that returns a Realtime token for a given run.
+ */
+export async function getRunSubscriptionToken(opts: {
+  runId: string;
+}): Promise<RunRealtimeToken> {
+  const token = await getSubscriptionToken(inngest, {
+    channel: runChannel(opts.runId),
+    topics: [...RUN_TOPICS],
+  });
+  return token as RunRealtimeToken;
+}
 
 /* =========================
    2) Event contracts
@@ -51,6 +86,34 @@ const BuildRequestedEvent = z.object({
 export type BuildRequestedEvent = z.infer<typeof BuildRequestedEvent>;
 
 /* =========================
+   3) Realtime message shapes
+   ========================= */
+
+type TaskStatus = "queued" | "running" | "done" | "error";
+
+type ProgressTask = {
+  id: string;
+  label: string;
+  status: TaskStatus;
+  detail?: string;
+};
+
+type ProgressPayload =
+  | { kind: "init"; tasks: ProgressTask[] }
+  | { kind: "task_update"; taskId: string; status: TaskStatus; detail?: string }
+  | { kind: "phase"; label: string; status: TaskStatus; detail?: string };
+
+type LogPayload = { kind: "log"; line: string };
+
+type ResultPayload = {
+  kind: "result";
+  fragmentTitle: string;
+  response: string;
+  sandboxUrl: string;
+  taskSummary: string;
+};
+
+/* =========================
    4) Agent Schemas
    ========================= */
 
@@ -74,6 +137,34 @@ const AGENT_DECISION_SCHEMA = z.discriminatedUnion("type", [
   }),
 ]);
 type AgentDecision = z.infer<typeof AGENT_DECISION_SCHEMA>;
+
+/* =========================
+   5) Helpers: publish to UI
+   ========================= */
+
+async function publishProgress(publish: (msg: any) => Promise<any>, runId: string, payload: ProgressPayload) {
+  await publish({
+    channel: runChannel(runId),
+    topic: "progress",
+    data: payload,
+  });
+}
+
+async function publishLog(publish: (msg: any) => Promise<any>, runId: string, line: string) {
+  await publish({
+    channel: runChannel(runId),
+    topic: "log",
+    data: { kind: "log", line } satisfies LogPayload,
+  });
+}
+
+async function publishResult(publish: (msg: any) => Promise<any>, runId: string, payload: ResultPayload) {
+  await publish({
+    channel: runChannel(runId),
+    topic: "result",
+    data: payload,
+  });
+}
 
 /* =========================
    6) E2B tool adapters

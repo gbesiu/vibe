@@ -28,7 +28,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
                 {sandboxUrl ? (
                     <iframe
                         src={sandboxUrl}
-                        className="h-full w-full object-cover pointer-events-none select-none origin-top scale-[0.25] h-[400%] w-[400%]"
+                        className="h-full w-full object-cover pointer-events-none select-none origin-top"
                         tabIndex={-1}
                         loading="lazy"
                     />

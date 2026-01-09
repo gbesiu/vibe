@@ -1,8 +1,11 @@
+"use client";
+
 import { useEffect, useRef } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "@/trpc/client";
 import { Fragment } from "@/generated/prisma";
+import confetti from "canvas-confetti";
 
 import { MessageCard } from "./message-card";
 import { MessageForm } from "./message-form";
@@ -12,16 +15,14 @@ interface Props {
   projectId: string;
   activeFragment: Fragment | null;
   setActiveFragment: (fragment: Fragment | null) => void;
+  onPreviewChange?: () => void;
 };
-
-import confetti from "canvas-confetti";
-
-// ... existing imports
 
 export const MessagesContainer = ({
   projectId,
   activeFragment,
-  setActiveFragment
+  setActiveFragment,
+  onPreviewChange,
 }: Props) => {
   const trpc = useTRPC();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -70,8 +71,6 @@ export const MessagesContainer = ({
     prevMessageCount.current = messages.length;
   }, [messages.length, lastMessage?.role]);
 
-  // ... rest of render
-
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex-1 min-h-0 overflow-y-auto">
@@ -88,7 +87,12 @@ export const MessagesContainer = ({
               type={message.type}
             />
           ))}
-          {isLastMessageUser && <MessageLoading />}
+          {isLastMessageUser && (
+            <MessageLoading
+              runId={lastMessage.id}
+              onPreviewChange={onPreviewChange}
+            />
+          )}
           <div ref={bottomRef} />
         </div>
       </div>

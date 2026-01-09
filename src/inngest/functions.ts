@@ -13,10 +13,36 @@ import { prisma } from "@/lib/db";
    ========================= */
 
 export const runChannel = (runId: string) => `run:${runId}` as const;
-export const RUN_TOPICS = ["progress", "log", "result"] as const;
+// Added "preview" topic
+export const RUN_TOPICS = ["progress", "log", "result", "preview"] as const;
 export type RunTopic = (typeof RUN_TOPICS)[number];
 
 export type RunRealtimeToken = any;
+
+// ... (getRunSubscriptionToken remains same)
+
+/* =========================
+   3) Realtime message shapes
+   ========================= */
+// ... existing types
+type PreviewPayload = { kind: "preview_update" };
+
+// ...
+
+/* =========================
+   5) Helpers
+   ========================= */
+
+async function publishPreview(publish: (msg: any) => Promise<any>, runId: string) {
+  await publish({
+    channel: runChannel(runId),
+    topic: "preview",
+    data: { kind: "preview_update" } satisfies PreviewPayload,
+  });
+}
+
+// ... existing helpers ...
+
 
 /**
  * Server action / server function that returns a Realtime token for a given run.
@@ -389,7 +415,11 @@ export const buildAppWorkflow = inngest.createFunction(
           if (decision.tool === "createOrUpdateFiles") {
             const files = decision.input?.files || [];
             // @ts-ignore
-            return await toolWriteFiles(sandbox, files);
+            const start = Date.now();
+            const res = await toolWriteFiles(sandbox, files);
+            // Emit preview update!
+            await publishPreview(publishFn, runId);
+            return res;
           }
           if (decision.tool === "readFiles") {
             const paths = decision.input?.paths || [];

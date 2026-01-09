@@ -76,97 +76,6 @@ const AGENT_DECISION_SCHEMA = z.discriminatedUnion("type", [
 type AgentDecision = z.infer<typeof AGENT_DECISION_SCHEMA>;
 
 /* =========================
-   5) OpenAI Tool Definitions
-   ========================= */
-
-const OPENAI_TOOLS = [
-  {
-    type: "function" as const,
-    function: {
-      name: "terminal",
-      description: "Execute a terminal command in the sandbox environment. Use this for npm install, running scripts, etc.",
-      parameters: {
-        type: "object",
-        properties: {
-          command: {
-            type: "string",
-            description: "The shell command to execute (e.g., 'npm install framer-motion')"
-          }
-        },
-        required: ["command"]
-      }
-    }
-  },
-  {
-    type: "function" as const,
-    function: {
-      name: "createOrUpdateFiles",
-      description: "Create or update multiple files in the project. Use this to write code files.",
-      parameters: {
-        type: "object",
-        properties: {
-          files: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                path: {
-                  type: "string",
-                  description: "File path relative to project root (e.g., 'src/app/page.tsx')"
-                },
-                content: {
-                  type: "string",
-                  description: "Complete file content"
-                }
-              },
-              required: ["path", "content"]
-            },
-            description: "Array of files to create or update"
-          }
-        },
-        required: ["files"]
-      }
-    }
-  },
-  {
-    type: "function" as const,
-    function: {
-      name: "readFiles",
-      description: "Read the contents of one or more files from the project",
-      parameters: {
-        type: "object",
-        properties: {
-          paths: {
-            type: "array",
-            items: { type: "string" },
-            description: "Array of file paths to read (e.g., ['src/app/page.tsx', 'package.json'])"
-          }
-        },
-        required: ["paths"]
-      }
-    }
-  },
-  {
-    type: "function" as const,
-    function: {
-      name: "finish",
-      description: "Call this when you have completed the task. Provide a summary of what was built.",
-      parameters: {
-        type: "object",
-        properties: {
-          task_summary: {
-            type: "string",
-            description: "A brief summary in English of what was accomplished (1-3 sentences)"
-          }
-        },
-        required: ["task_summary"]
-      }
-    }
-  }
-];
-
-
-/* =========================
    6) E2B tool adapters
    ========================= */
 
@@ -244,41 +153,6 @@ async function llmJSON(opts: {
     // Fallback if JSON is broken
     return { type: "tool", tool: "readFiles", input: { paths: ["/app/page.tsx"] }, summary: "JSON parse error, fallback to readFiles." };
   }
-}
-
-// New function supporting OpenAI Function Calling
-async function llmWithTools(opts: {
-  model: string;
-  system: string;
-  messages: any[]; // Use any to support tool messages
-  tools?: any[];
-}): Promise<{ type: 'tool_call' | 'text'; toolCall?: any; text?: string }> {
-  const res = await openai.chat.completions.create({
-    model: opts.model,
-    temperature: 0.2,
-    messages: [
-      { role: "system", content: opts.system },
-      ...opts.messages,
-    ],
-    tools: opts.tools || undefined,
-    tool_choice: opts.tools ? "auto" : undefined,
-  });
-
-  const message = res.choices[0]?.message;
-
-  // Check if GPT returned tool calls
-  if (message?.tool_calls && message.tool_calls.length > 0) {
-    return {
-      type: 'tool_call',
-      toolCall: message.tool_calls[0]
-    };
-  }
-
-  // Otherwise, return text response
-  return {
-    type: 'text',
-    text: message?.content || ""
-  };
 }
 
 async function llmText(opts: {
@@ -400,69 +274,31 @@ export const buildAppWorkflow = inngest.createFunction(
       await publishLog(publishFn, runId, `[Agent] Iteracja ${i + 1}/${maxIterations}...`);
 
       const decisionRaw = await step.run(`agent-decision-${i + 1}`, async () => {
-        return await llmWithTools({
+        return await llmJSON({
           model,
           system: SYSTEM_PROMPT, // From @/prompt
           messages: [
             ...agentMessages,
             {
               role: "user",
-              content: `Current state (last 8 actions):\n${JSON.stringify(state.toolTrace.slice(-8), null, 2)}\n\nWhat's your next action?`,
+              content:
+                `Obecny stan (ostatnie 8 akcji):\n${JSON.stringify(state.toolTrace.slice(-8), null, 2)}\n\n` +
+                `Masz do dyspozycji narzędzia: terminal, createOrUpdateFiles, readFiles.\n` +
+                `Decyzja (JSON)?`,
             },
           ],
-          tools: OPENAI_TOOLS,
         });
       });
 
+      const decisionParsed = AGENT_DECISION_SCHEMA.safeParse(decisionRaw);
+
       let decision: AgentDecision;
-
-      if (decisionRaw.type === 'tool_call') {
-        const tc = decisionRaw.toolCall;
-        const toolName = tc.function.name;
-        let toolArgs: any;
-
-        try {
-          toolArgs = JSON.parse(tc.function.arguments);
-        } catch (e) {
-          await publishLog(publishFn, runId, `[System] Błąd parsowania argumentów narzędzia`);
-          toolArgs = {};
-        }
-
-        await publishLog(publishFn, runId, `[Agent] Tool call: ${toolName}`);
-
-        if (toolName === 'finish') {
-          decision = { type: 'final', task_summary: toolArgs.task_summary || 'Task completed' };
-        } else if (toolName === 'terminal') {
-          decision = {
-            type: 'tool',
-            tool: 'terminal',
-            input: toolArgs,
-            summary: `Running: ${toolArgs.command || ''}`
-          };
-        } else if (toolName === 'createOrUpdateFiles') {
-          decision = {
-            type: 'tool',
-            tool: 'createOrUpdateFiles',
-            input: toolArgs,
-            summary: `Writing ${toolArgs.files?.length || 0} files`
-          };
-        } else if (toolName === 'readFiles') {
-          decision = {
-            type: 'tool',
-            tool: 'readFiles',
-            input: toolArgs,
-            summary: `Reading ${toolArgs.paths?.length || 0} files`
-          };
-        } else {
-          // Unknown tool, fallback
-          await publishLog(publishFn, runId, `[System] Unknown tool: ${toolName}`);
-          decision = { type: 'tool', tool: 'readFiles', input: { paths: ['/app/page.tsx'] }, summary: 'Fallback' };
-        }
-      } else {
-        // Agent responded with text instead of tool call
-        await publishLog(publishFn, runId, `[System] Agent responded with text: ${decisionRaw.text?.substring(0, 100)}`);
+      if (!decisionParsed.success) {
+        await publishLog(publishFn, runId, `[System] Błąd JSON Agenta. Ponawiam próbę odczytu.`);
         // Fallback action
-        decision = { type: 'tool', tool: 'readFiles', input: { paths: ['/app/page.tsx'] }, summary: 'Auto-fallback (no tool call)' };
+        decision = { type: "tool", tool: "readFiles", input: { paths: ["/app/page.tsx"] }, summary: "Auto-correction: reading file." };
+      } else {
+        decision = decisionParsed.data;
       }
 
       if (decision.type === "final") {

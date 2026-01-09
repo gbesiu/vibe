@@ -86,39 +86,9 @@ export async function publishResult(publish: (msg: any) => Promise<any>, runId: 
 export async function getRunSubscriptionToken(opts: {
     runId: string;
 }): Promise<RunRealtimeToken> {
-    const subscriptionToken = await getSubscriptionToken(inngest, {
+    const token = await getSubscriptionToken(inngest, {
         channel: runChannel(opts.runId),
         topics: [...RUN_TOPICS],
     });
-
-    // Fetch WebSocket URL from Inngest API (server-side to avoid CORS)
-    try {
-        const response = await fetch('https://api.inngest.com/v1/realtime/token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(subscriptionToken),
-        });
-
-        if (!response.ok) {
-            console.error('[Inngest] Failed to get WebSocket URL:', response.statusText);
-            // Return original token as fallback
-            return subscriptionToken as RunRealtimeToken;
-        }
-
-        const wsData = await response.json();
-        console.log('[Inngest] WebSocket URL obtained:', wsData);
-
-        // Return WebSocket URL along with original token data
-        return {
-            ...subscriptionToken,
-            wsUrl: wsData.url || wsData.wsUrl,
-            ...wsData
-        } as RunRealtimeToken;
-    } catch (error) {
-        console.error('[Inngest] Error fetching WebSocket URL:', error);
-        // Return original token as fallback
-        return subscriptionToken as RunRealtimeToken;
-    }
+    return token as RunRealtimeToken;
 };

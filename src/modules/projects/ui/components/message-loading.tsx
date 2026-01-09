@@ -50,71 +50,66 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
   useEffect(() => {
     if (!token) return;
 
-    let cleanup: (() => void) | undefined;
+    let connection: any = null;
 
     const connect = async () => {
       try {
         setError(null);
         console.log("[Realtime] Connecting with token:", token);
 
-        // subscribe() returns Promise and accepts callback
-        const subscription = await subscribe(
-          {
-            app: token,
-            channel: `run:${runId}`,
-            topics: ["progress", "log", "preview"],
-          },
-          (event) => {
-            // This callback fires on each message
-            console.log("[Realtime] Event received:", event);
+        // Subscribe using token directly - token contains authentication
+        connection = subscribe({
+          app: token, // Token is the permission/auth object
+          channel: `run:${runId}`,
+          topics: ["progress", "log", "preview"],
+        });
 
-            const topic = event.topic;
-            const data = event.data;
+        // Handle events
+        connection.on("message", (msg: any) => {
+          console.log("[Realtime] Msg:", msg);
+          const topic = msg.topic;
+          const data = msg.data;
 
-            if (topic === "log") {
-              setLogs(prev => [...prev, data.line].slice(-50));
+          if (topic === "log") {
+            setLogs(prev => [...prev, data.line].slice(-50));
+          }
+          if (topic === "progress") {
+            const payload = data;
+            if (payload.kind === "init") {
+              setTasks(payload.tasks);
             }
-            if (topic === "progress") {
-              const payload = data;
-              if (payload.kind === "init") {
-                setTasks(payload.tasks);
-              }
-              if (payload.kind === "task_update") {
-                setTasks(prev => prev.map(t =>
-                  t.id === payload.taskId ? { ...t, status: payload.status, detail: payload.detail } : t
-                ));
-              }
-            }
-            if (topic === "preview" && data.kind === "preview_update") {
-              onPreviewChange?.();
+            if (payload.kind === "task_update") {
+              setTasks(prev => prev.map(t =>
+                t.id === payload.taskId ? { ...t, status: payload.status, detail: payload.detail } : t
+              ));
             }
           }
-        );
-
-        console.log("[Realtime] Subscription created:", subscription);
-        setIsConnected(true);
-
-        // Store cleanup function
-        cleanup = () => {
-          console.log("[Realtime] Cleaning up subscription");
-          // Subscription might have close() or unsubscribe() method
-          if (typeof subscription === 'object' && subscription !== null) {
-            (subscription as any).close?.();
-            (subscription as any).unsubscribe?.();
+          if (topic === "preview" && data.kind === "preview_update") {
+            onPreviewChange?.();
           }
-        };
+        });
+
+        connection.on("open", () => {
+          console.log("[Realtime] Connected!");
+          setIsConnected(true);
+        });
+
+        connection.on("error", (err: any) => {
+          console.error("[Realtime] Channel error:", err);
+          setError(`Błąd połączenia: ${err.message || JSON.stringify(err)}`);
+          setIsConnected(false);
+        });
 
       } catch (e: any) {
         console.error("Realtime setup error", e);
         setError(`Błąd inicjalizacji: ${e.message}`);
-        setIsConnected(false);
       }
     };
 
     connect();
 
     return () => {
-      cleanup?.();
+      connection?.close?.();
     };
   }, [token, runId, onPreviewChange]);
 

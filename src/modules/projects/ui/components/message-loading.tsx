@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Realtime } from "@inngest/realtime";
+import { useQuery } from "@tanstack/react-query";
 import { Check, Loader2, Terminal, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
@@ -29,12 +30,17 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Use declarative query to fetch token
   // @ts-ignore
-  const { data: token, error: tokenError } = trpc.messages.getRealtimeToken.useQuery(
-    { runId: runId! },
-    { enabled: !!runId, retry: 2 }
-  );
+  const { data: token, error: tokenError } = useQuery({
+    queryKey: ["getRealtimeToken", runId],
+    queryFn: async () => {
+      // Fallback to accessing client directly if proxy helpers fail
+      // @ts-ignore
+      return await trpc.client.messages.getRealtimeTokenV2.query({ runId: runId! });
+    },
+    enabled: !!runId,
+    retry: 2
+  });
 
   // Connection Effect
   useEffect(() => {

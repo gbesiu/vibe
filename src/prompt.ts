@@ -81,7 +81,6 @@ Rules:
 - **Backend**: Implement CRUD in \`app/api/**/route.ts\`.
 - **Hooks**: Always start files with \`"use client"\` if they use React hooks.
 - **Tools**: Install packages via terminal before importing.
-- **Imports**: Match file casing EXACTLY. \`import { Column } from "./Column"\` requires \`Column.tsx\`, not \`column.tsx\`.
 
 ## 4. Operational Workflow (Chain of Thought)
 

@@ -45,29 +45,60 @@ export const MessageLoading = ({ runId, onPreviewChange }: Props) => {
     retry: 2
   });
 
-  // Connection Effect - DISABLED TEMPORARILY
-  // Inngest Realtime requires complex workflow that's failing in production
-  // TODO: Re-enable after debugging backend fetch to api.inngest.com
+  // Polling for run status (instead of WebSocket)
+  const { data: runStatus } = useQuery({
+    queryKey: ["runStatus", runId],
+    queryFn: async () => {
+      const res = await fetch(`/api/trpc/messages.getRunStatus?input=${encodeURIComponent(JSON.stringify({ json: { runId } }))}`);
+      if (!res.ok) throw new Error("Failed to fetch status");
+      const body = await res.json();
+      return body?.result?.data?.json ?? body?.result?.data;
+    },
+    enabled: !!runId,
+    refetchInterval: 2000, // Poll every 2 seconds
+    retry: 2,
+  });
+
+  // Update UI based on run status
   useEffect(() => {
-    if (!token) return;
+    if (!runStatus) return;
 
-    console.log("[Realtime] DISABLED - Token received:", token);
-    console.log("[Realtime] To enable, backend needs to fetch WebSocket URL from Inngest API");
+    console.log("[Polling] Run status:", runStatus);
 
-    // Show as "connected" but don't actually connect
+    // Show connection indicator
     setIsConnected(true);
 
-    // Simulate some dummy progress for now
-    setTasks([
-      { id: "1", label: "Przygotowanie środowiska", status: "done" },
-      { id: "2", label: "Analiza wymagań", status: "running", detail: "w toku..." },
-      { id: "3", label: "Generowanie kodu", status: "queued" },
-    ]);
+    // Update tasks based on message type
+    // MessageType: "user" | "assistant" 
+    // If assistant message exists with fragment, it's done
+    if (runStatus.role === "user") {
+      setTasks([
+        { id: "1", label: "Wysłano zapytanie", status: "done" },
+        { id: "2", label: "Oczekiwanie na odpowiedź", status: "running", detail: "przetwarzanie..." },
+        { id: "3", label: "Generowanie kodu", status: "queued" },
+      ]);
+    } else if (runStatus.role === "assistant" && !runStatus.hasFragment) {
+      setTasks([
+        { id: "1", label: "Wysłano zapytanie", status: "done" },
+        { id: "2", label: "Odpowiedź otrzymana", status: "done" },
+        { id: "3", label: "Generowanie kodu", status: "running", detail: "tworzenie aplikacji..." },
+      ]);
+    } else if (runStatus.role === "assistant" && runStatus.hasFragment) {
+      setTasks([
+        { id: "1", label: "Wysłano zapytanie", status: "done" },
+        { id: "2", label: "Odpowiedź otrzymana", status: "done" },
+        { id: "3", label: "Generowanie kodu", status: "done" },
+      ]);
+      // Trigger preview change if fragment is ready
+      if (runStatus.fragmentId) {
+        onPreviewChange?.();
+      }
+    } else if (runStatus.status === "error") { // Keep error handling for now
+      setError("Wystąpił błąd podczas przetwarzania");
+      setIsConnected(false);
+    }
 
-    return () => {
-      console.log("[Realtime] Cleanup (no-op)");
-    };
-  }, [token, runId, onPreviewChange]);
+  }, [runStatus, onPreviewChange]);
 
   // Handle Token Error
   useEffect(() => {

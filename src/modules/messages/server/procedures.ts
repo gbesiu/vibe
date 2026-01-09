@@ -91,4 +91,39 @@ export const messagesRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return await getRunSubscriptionToken({ runId: input.runId });
     }),
+
+  getRunStatus: protectedProcedure
+    .input(z.object({ runId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const message = await prisma.message.findUnique({
+        where: { id: input.runId },
+        include: { fragment: true },
+      });
+
+      if (!message) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+      }
+
+      // Check if message belongs to user's project
+      const project = await prisma.project.findFirst({
+        where: {
+          id: message.projectId,
+          userId: ctx.auth.userId,
+        },
+      });
+
+      if (!project) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      return {
+        id: message.id,
+        type: message.type,
+        role: message.role,
+        content: message.content,
+        hasFragment: !!message.fragment,
+        fragmentId: message.fragment?.id,
+        updatedAt: message.updatedAt,
+      };
+    }),
 });

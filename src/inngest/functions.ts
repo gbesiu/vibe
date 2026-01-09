@@ -155,22 +155,9 @@ async function llmJSON(opts: {
     parts: [{ text: m.content }],
   })).filter(m => m.role !== "system"); // System is already in systemInstruction
 
-  let result;
-  try {
-    result = await model.generateContent({ contents });
-  } catch (err: any) {
-    if (opts.model === "gemini-3-pro" && (err.status === 429 || err.message?.includes("Exhausted"))) {
-      console.warn("[Gemini] 3-Pro exhausted, falling back to 1.5-pro");
-      const fallbackModel = genAI.getGenerativeModel({
-        model: "gemini-1.5-pro",
-        generationConfig: { responseMimeType: "application/json" },
-        systemInstruction: opts.system,
-      });
-      result = await fallbackModel.generateContent({ contents });
-    } else {
-      throw err;
-    }
-  }
+  const result = await model.generateContent({
+    contents,
+  });
 
   const response = result.response;
   const content = response.text();
@@ -204,21 +191,9 @@ async function llmText(opts: {
     parts: [{ text: m.content }],
   })).filter(m => m.role !== "system");
 
-  let result;
-  try {
-    result = await model.generateContent({ contents });
-  } catch (err: any) {
-    if (opts.model === "gemini-3-pro" && (err.status === 429 || err.message?.includes("Exhausted"))) {
-      console.warn("[Gemini] 3-Pro text exhausted, falling back to 1.5-pro");
-      const fallbackModel = genAI.getGenerativeModel({
-        model: "gemini-1.5-pro",
-        systemInstruction: opts.system,
-      });
-      result = await fallbackModel.generateContent({ contents });
-    } else {
-      throw err;
-    }
-  }
+  const result = await model.generateContent({
+    contents,
+  });
 
   return result.response.text();
 }

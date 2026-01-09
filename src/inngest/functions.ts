@@ -240,8 +240,8 @@ export const buildAppWorkflow = inngest.createFunction(
       // 1) Sandbox
       await publishProgress(publishFn, runId, { kind: "task_update", taskId: "get-sandbox-id", status: "running" });
       const sandboxId = await step.run("create-sandbox", async () => {
-        // Create sandbox logic
-        const sb = await Sandbox.create();
+        // Create sandbox logic using the custom Vibe template
+        const sb = await Sandbox.create('vibe-nextjs');
 
         // Start the development server in the background
         await sb.commands.run("npm run dev", { background: true });

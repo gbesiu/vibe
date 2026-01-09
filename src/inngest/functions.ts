@@ -389,9 +389,7 @@ export const buildAppWorkflow = inngest.createFunction(
       ];
 
       for (let i = 0; i < maxIterations; i++) {
-        const iterMsg = `Iteracja ${i + 1}/${maxIterations}`;
-        await publishLog(publishFn, runId, `[Agent] ${iterMsg}...`);
-        await publishProgress(publishFn, runId, { kind: "task_update", taskId: "agent-loop", status: "running", detail: iterMsg });
+        await publishLog(publishFn, runId, `[Agent] Iteracja ${i + 1}/${maxIterations}...`);
 
         const decisionRaw = await step.run(`agent-decision-${i + 1}`, async () => {
           return await llmJSON({

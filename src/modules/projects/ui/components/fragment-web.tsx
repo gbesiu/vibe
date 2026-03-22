@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ExternalLinkIcon, RefreshCcwIcon } from "lucide-react";
+import { DownloadIcon, ExternalLinkIcon, Loader2Icon, RefreshCcwIcon } from "lucide-react";
+import { toast } from "sonner";
 
 import { Hint } from "@/components/hint";
-import { Fragment } from "@/generated/prisma";
+import { Fragment } from "@/lib/prisma-types";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 export function FragmentWeb({ data }: Props) {
   const [copied, setCopied] = useState(false);
   const [fragmentKey, setFragmentKey] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const onRefresh = () => {
     setFragmentKey((prev) => prev + 1);
@@ -21,6 +23,48 @@ export function FragmentWeb({ data }: Props) {
     navigator.clipboard.writeText(data.sandboxUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadZip = async () => {
+    if (!data.files) {
+      toast.error("No files to download");
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      const files = JSON.parse(data.files as string) as Record<string, string>;
+      const entries = Object.entries(files);
+
+      if (entries.length === 1) {
+        // Single file — download directly
+        const [filename, content] = entries[0];
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        // Multiple files — combine into one downloadable HTML page
+        const combined = entries.map(([path, content]) =>
+          `<!-- ===== ${path} ===== -->\n${content}`
+        ).join("\n\n");
+        const blob = new Blob([combined], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "project-code.html";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      toast.success("Code downloaded!");
+    } catch {
+      toast.error("Failed to download code");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -42,6 +86,16 @@ export function FragmentWeb({ data }: Props) {
             <span className="truncate">
               {data.sandboxUrl}
             </span>
+          </Button>
+        </Hint>
+        <Hint text="Download code as ZIP" side="bottom" align="start">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleDownloadZip}
+            disabled={!data.files || isDownloading}
+          >
+            {isDownloading ? <Loader2Icon className="animate-spin" /> : <DownloadIcon />}
           </Button>
         </Hint>
         <Hint text="Open in a new tab" side="bottom" align="start">

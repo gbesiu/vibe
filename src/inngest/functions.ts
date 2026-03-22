@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Sandbox } from "@e2b/code-interpreter";
-import { openai, createAgent, createTool, createNetwork, type Tool, type Message, createState } from "@inngest/agent-kit";
+import { anthropic, createAgent, createTool, createNetwork, type Tool, type Message, createState } from "@inngest/agent-kit";
 
 import { prisma } from "@/lib/db";
 import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from "@/prompt";
@@ -19,7 +19,8 @@ export const codeAgentFunction = inngest.createFunction(
   { event: "code-agent/run" },
   async ({ event, step }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
-      const sandbox = await Sandbox.create("vibe-code-fotz");
+      const templateId = process.env.E2B_SANDBOX_TEMPLATE || "vibe-code-fotz";
+      const sandbox = await Sandbox.create(templateId);
       await sandbox.setTimeout(SANDBOX_TIMEOUT);
       return sandbox.sandboxId;
     });
@@ -62,9 +63,10 @@ export const codeAgentFunction = inngest.createFunction(
       name: "code-agent",
       description: "An expert coding agent",
       system: PROMPT,
-      model: openai({ 
-        model: "gpt-5.1",
+      model: anthropic({ 
+        model: "claude-sonnet-4-20250514",
         defaultParameters: {
+          max_tokens: 16384,
           temperature: 0.1,
         },
       }),
@@ -195,8 +197,11 @@ export const codeAgentFunction = inngest.createFunction(
       name: "fragment-title-generator",
       description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
-      model: openai({ 
-        model: "gpt-4o",
+      model: anthropic({ 
+        model: "claude-sonnet-4-20250514",
+        defaultParameters: {
+          max_tokens: 4096,
+        },
       }),
     })
 
@@ -204,20 +209,26 @@ export const codeAgentFunction = inngest.createFunction(
       name: "response-generator",
       description: "A response generator",
       system: RESPONSE_PROMPT,
-      model: openai({ 
-        model: "gpt-4o",
+      model: anthropic({ 
+        model: "claude-sonnet-4-20250514",
+        defaultParameters: {
+          max_tokens: 4096,
+        },
       }),
     });
 
+    // Anthropic requires at least 1 message - ensure summary is never empty
+    const summaryText = result.state.data.summary || 
+      `<task_summary>Created files: ${Object.keys(result.state.data.files || {}).join(", ") || "none"}</task_summary>`;
+
     const { 
       output: fragmentTitleOuput
-    } = await fragmentTitleGenerator.run(result.state.data.summary);
+    } = await fragmentTitleGenerator.run(summaryText);
     const { 
       output: responseOutput
-    } = await responseGenerator.run(result.state.data.summary);
+    } = await responseGenerator.run(summaryText);
 
     const isError =
-      !result.state.data.summary ||
       Object.keys(result.state.data.files || {}).length === 0;
 
     const sandboxUrl = await step.run("get-sandbox-url", async () => {
@@ -248,7 +259,7 @@ export const codeAgentFunction = inngest.createFunction(
             create: {
               sandboxUrl: sandboxUrl,
               title: parseAgentOutput(fragmentTitleOuput),
-              files: result.state.data.files,
+              files: JSON.stringify(result.state.data.files),
             },
           },
         },

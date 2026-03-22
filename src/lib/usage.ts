@@ -3,7 +3,7 @@ import { RateLimiterPrisma } from "rate-limiter-flexible";
 
 import { prisma } from "@/lib/db";
 
-const FREE_POINTS = 2;
+const FREE_POINTS = 100; // TODO: revert to 2 before prod
 const PRO_POINTS = 100;
 const DURATION = 30 * 24 * 60 * 60; // 30 days
 const GENERATION_COST = 1;
@@ -29,9 +29,14 @@ export async function consumeCredits() {
     throw new Error("User not authenticated");
   }
 
-  const usageTracker = await getUsageTracker();
-  const result = await usageTracker.consume(userId, GENERATION_COST);
-  return result;
+  try {
+    const usageTracker = await getUsageTracker();
+    const result = await usageTracker.consume(userId, GENERATION_COST);
+    return result;
+  } catch (error) {
+    console.error("[consumeCredits] Error:", error);
+    throw error;
+  }
 };
 
 export async function getUsageStatus() {

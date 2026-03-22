@@ -5,7 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import { Suspense, useState } from "react";
 import { EyeIcon, CodeIcon, CrownIcon } from "lucide-react";
 
-import { Fragment } from "@/generated/prisma";
+import { Fragment } from "@/lib/prisma-types";
 import { Button } from "@/components/ui/button";
 import { UserControl } from "@/components/user-control";
 import { FileExplorer } from "@/components/file-explorer";
@@ -34,8 +34,9 @@ export const ProjectView = ({ projectId }: Props) => {
 
   return (
     <div className="h-screen">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" autoSaveId="project-layout">
         <ResizablePanel
+          id="messages-panel"
           defaultSize={35}
           minSize={20}
           className="flex flex-col min-h-0"
@@ -57,6 +58,7 @@ export const ProjectView = ({ projectId }: Props) => {
         </ResizablePanel>
         <ResizableHandle className="hover:bg-primary transition-colors" />
         <ResizablePanel
+          id="preview-panel"
           defaultSize={65}
           minSize={50}
         >
@@ -92,7 +94,7 @@ export const ProjectView = ({ projectId }: Props) => {
             <TabsContent value="code" className="min-h-0">
               {!!activeFragment?.files && (
                 <FileExplorer
-                  files={activeFragment.files as { [path: string]: string }}
+                  files={JSON.parse(activeFragment.files as string) as { [path: string]: string }}
                 />
               )}
             </TabsContent>

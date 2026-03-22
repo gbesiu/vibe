@@ -54,14 +54,17 @@ export const messagesRouter = createTRPCRouter({
 
       try {
         await consumeCredits();
-      } catch (error) {
-        if (error instanceof Error && 'remainingPoints' in error) {
+      } catch (error: unknown) {
+        // rate-limiter-flexible throws a plain object (not Error) with _remainingPoints
+        const rateLimitError = error as Record<string, unknown>;
+        if (rateLimitError && typeof rateLimitError === "object" && "_remainingPoints" in rateLimitError) {
           throw new TRPCError({
             code: "TOO_MANY_REQUESTS",
-            message: "You have run out of credits"
+            message: "You have run out of credits",
           });
         }
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error instanceof Error ? error.message : "Something went wrong" });
+        // Log other errors but don't block message creation
+        console.error("[messages.create] consumeCredits failed:", error);
       }
 
       const createdMessage = await prisma.message.create({

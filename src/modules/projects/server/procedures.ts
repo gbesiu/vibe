@@ -50,15 +50,17 @@ export const projectsRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       try {
         await consumeCredits();
-      } catch (error) {
-        if (error instanceof Error && 'remainingPoints' in error) {
+      } catch (error: unknown) {
+        // RateLimiterPrisma throws a plain object (not Error) with _remainingPoints
+        const rateLimitError = error as Record<string, unknown>;
+        if (rateLimitError && typeof rateLimitError === 'object' && '_remainingPoints' in rateLimitError) {
           throw new TRPCError({
             code: "TOO_MANY_REQUESTS",
             message: "You have run out of credits"
           });
         }
-        throw error;
-        //throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error instanceof Error ? error.message : "Something went wrong" });
+        // Log other credit errors but don't block project creation
+        console.error("[projects.create] consumeCredits failed (non-fatal):", error);
       }
 
       const createdProject = await prisma.project.create({
@@ -86,5 +88,48 @@ export const projectsRouter = createTRPCRouter({
       });
 
       return createdProject;
+    }),
+  rename: protectedProcedure
+    .input(z.object({
+      id: z.string().min(1),
+      name: z.string().min(1, { message: "Name is required" }).max(100),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const existingProject = await prisma.project.findUnique({
+        where: { id: input.id, userId: ctx.auth.userId },
+      });
+
+      if (!existingProject) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+
+      return await prisma.project.update({
+        where: { id: input.id },
+        data: { name: input.name },
+      });
+    }),
+  delete: protectedProcedure
+    .input(z.object({
+      id: z.string().min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const existingProject = await prisma.project.findUnique({
+        where: { id: input.id, userId: ctx.auth.userId },
+      });
+
+      if (!existingProject) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+
+      // Delete fragments, messages, then project
+      await prisma.fragment.deleteMany({
+        where: { message: { projectId: input.id } },
+      });
+      await prisma.message.deleteMany({
+        where: { projectId: input.id },
+      });
+      return await prisma.project.delete({
+        where: { id: input.id },
+      });
     }),
 });

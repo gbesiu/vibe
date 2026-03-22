@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { dark } from "@clerk/themes";
 import { UserButton } from "@clerk/nextjs";
 
@@ -11,6 +12,11 @@ interface Props {
 
 export const UserControl = ({ showName }: Props) => {
   const currentTheme = useCurrentTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <UserButton
@@ -21,7 +27,7 @@ export const UserControl = ({ showName }: Props) => {
           userButtonAvatarBox: "rounded-md! size-8!",
           userButtonTrigger: "rounded-md!"
         },
-        baseTheme: currentTheme === "dark" ? dark : undefined,
+        baseTheme: mounted && currentTheme === "dark" ? dark : undefined,
       }}
     />
   );

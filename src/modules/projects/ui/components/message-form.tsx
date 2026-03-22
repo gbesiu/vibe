@@ -25,6 +25,15 @@ const formSchema = z.object({
     .max(10000, { message: "Value is too long" }),
 })
 
+const QUICK_PROMPTS = [
+  "Make it more colorful",
+  "Add dark mode toggle",
+  "Add responsive navbar",
+  "Improve the layout",
+  "Add footer with links",
+  "Add hover animations",
+];
+
 export const MessageForm = ({ projectId }: Props) => {
   const trpc = useTRPC();
   const router = useRouter();
@@ -69,6 +78,8 @@ export const MessageForm = ({ projectId }: Props) => {
   const isPending = createMessage.isPending;
   const isButtonDisabled = isPending || !form.formState.isValid;
   const showUsage = !!usage;
+  const currentValue = form.watch("value");
+  const showChips = !currentValue?.trim();
 
   return (
     <Form {...form}>
@@ -77,6 +88,20 @@ export const MessageForm = ({ projectId }: Props) => {
           points={usage.remainingPoints}
           msBeforeNext={usage.msBeforeNext}
         />
+      )}
+      {showChips && (
+        <div className="flex flex-wrap gap-1.5 px-4 pb-2">
+          {QUICK_PROMPTS.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              onClick={() => form.setValue("value", prompt, { shouldValidate: true })}
+              className="text-xs px-2.5 py-1 rounded-full border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
       )}
       <form
         onSubmit={form.handleSubmit(onSubmit)}
@@ -133,3 +158,4 @@ export const MessageForm = ({ projectId }: Props) => {
     </Form>
   );
 };
+

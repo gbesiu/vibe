@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useTRPC } from "@/trpc/client";
-import { Fragment } from "@/generated/prisma";
+import { Fragment, MessageRole, MessageType } from "@/lib/prisma-types";
 
 import { MessageCard } from "./message-card";
 import { MessageForm } from "./message-form";
@@ -58,12 +58,12 @@ export const MessagesContainer = ({
             <MessageCard
               key={message.id}
               content={message.content}
-              role={message.role}
+              role={message.role as MessageRole}
               fragment={message.fragment}
               createdAt={message.createdAt}
               isActiveFragment={activeFragment?.id === message.fragment?.id}
               onFragmentClick={() => setActiveFragment(message.fragment)}
-              type={message.type}
+              type={message.type as MessageType}
             />
           ))}
           {isLastMessageUser && <MessageLoading />}

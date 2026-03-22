@@ -1,10 +1,37 @@
 "use client";
 
+import { Component, type ReactNode } from "react";
 import Image from "next/image";
 import { dark } from "@clerk/themes";
 import { PricingTable } from "@clerk/nextjs";
 
 import { useCurrentTheme } from "@/hooks/use-current-theme";
+
+class PricingErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>Pricing information is currently unavailable.</p>
+          <p className="text-sm mt-2">Please check back later or contact support.</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const Page = () => {
   const currentTheme = useCurrentTheme();
@@ -25,14 +52,16 @@ const Page = () => {
         <p className="text-muted-foreground text-center text-sm md:text-base">
           Choose the plan that fits your needs
         </p>
-        <PricingTable
-          appearance={{
-            baseTheme: currentTheme === "dark" ? dark : undefined,
-            elements: {
-              pricingTableCard: "border! shadow-none! rounded-lg!"
-            }
-          }}
-        />
+        <PricingErrorBoundary>
+          <PricingTable
+            appearance={{
+              baseTheme: currentTheme === "dark" ? dark : undefined,
+              elements: {
+                pricingTableCard: "border! shadow-none! rounded-lg!"
+              }
+            }}
+          />
+        </PricingErrorBoundary>
       </section>
     </div>
    );

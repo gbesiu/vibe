@@ -58,7 +58,7 @@ photorealistic, 8K quality, centered composition, no text or watermarks.`;
       style: "natural",
     });
 
-    results.imageUrl = imageResponse.data[0]?.url ?? undefined;
+    results.imageUrl = imageResponse.data?.[0]?.url ?? undefined;
 
     // ── 3. Generate Higgsfield product video ──────────────────────────────
     if (process.env.HIGGSFIELD_API_KEY) {

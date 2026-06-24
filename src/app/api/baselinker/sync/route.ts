@@ -5,6 +5,7 @@ import {
   getInventories,
   getInventoryCategories,
   getAllProductsFromInventory,
+  type BLProductData,
 } from "@/lib/baselinker";
 
 function slugify(text: string): string {
@@ -109,8 +110,8 @@ async function upsertProduct(
       price: product.price_brutto,
       stock: product.quantity,
       sku: product.sku || null,
-      images,
-      mainImage,
+      images: images as string[],
+      mainImage: mainImage as string | null,
       categoryId,
       baselinkerData: product as object,
       isActive: true,
@@ -122,8 +123,8 @@ async function upsertProduct(
       price: product.price_brutto,
       stock: product.quantity,
       sku: product.sku || null,
-      images,
-      mainImage,
+      images: images as string[],
+      mainImage: mainImage as string | null,
       categoryId,
       baselinkerProductId: String(product.product_id),
       baselinkerData: product as object,

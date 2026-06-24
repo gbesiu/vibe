@@ -1,11 +1,14 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isPublicRoute = createRouteMatcher([
+  // Original vibe routes
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api(.*)",
-  "/pricing(.*)"
+  "/pricing(.*)",
+  // Krypton shop – public browsing
+  "/shop(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

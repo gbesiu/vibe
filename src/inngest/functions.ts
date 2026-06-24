@@ -194,7 +194,42 @@ export const codeAgentFunction = inngest.createFunction(
       },
     });
 
-    const result = await network.run(event.data.value, { state });
+    let result = await network.run(event.data.value, { state });
+
+    // --- Self-healing (opt-in): verify the generated app type-checks; if not, feed the errors back to the agent ---
+    // Controlled by SELF_HEAL_MAX_ATTEMPTS (default 0 = disabled). Set to 1+ to enable.
+    // Uses `npx tsc --noEmit` (the dev server keeps running; we must NOT run dev/build/start here).
+    // Fully guarded: any failure falls back to the original result and never breaks generation.
+    const SELF_HEAL_MAX_ATTEMPTS = Number(process.env.SELF_HEAL_MAX_ATTEMPTS ?? "0");
+    try {
+      for (let attempt = 1; attempt <= SELF_HEAL_MAX_ATTEMPTS; attempt++) {
+        if (Object.keys(result.state.data.files || {}).length === 0) break;
+
+        const typeErrors = await step.run(`self-heal-typecheck-${attempt}`, async () => {
+          try {
+            const sandbox = await getSandbox(sandboxId);
+            await sandbox.commands.run("cd /home/user && npx tsc --noEmit");
+            return null; // type-check passed
+          } catch (e) {
+            const err = e as { stdout?: string; stderr?: string };
+            const output = `${err.stdout ?? ""}\n${err.stderr ?? ""}`.trim() || String(e);
+            return output.slice(0, 6000);
+          }
+        });
+
+        if (!typeErrors) break; // app type-checks — nothing to heal
+
+        // Clear the summary so the router lets the agent run again, then ask it to fix the errors.
+        state.data.summary = "";
+        result = await network.run(
+          `The application you just generated does not type-check. Fix ALL of the following TypeScript errors by editing the affected files with createOrUpdateFiles. Do not run dev/build/start scripts. Re-emit a <task_summary> when done.\n\n<tsc_errors>\n${typeErrors}\n</tsc_errors>`,
+          { state },
+        );
+      }
+    } catch (healError) {
+      // Self-healing must never break the main flow.
+      console.error("[self-heal] skipped due to error:", healError);
+    }
 
     const fragmentTitleGenerator = createAgent({
       name: "fragment-title-generator",

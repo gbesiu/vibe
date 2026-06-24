@@ -31,6 +31,27 @@ export const messagesRouter = createTRPCRouter({
 
       return messages;
     }),
+  recreateSandbox: protectedProcedure
+    .input(z.object({ fragmentId: z.string().min(1, { message: "Fragment ID is required" }) }))
+    .mutation(async ({ input, ctx }) => {
+      const fragment = await prisma.fragment.findFirst({
+        where: {
+          id: input.fragmentId,
+          message: { project: { userId: ctx.auth.userId } },
+        },
+      });
+
+      if (!fragment) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Fragment not found" });
+      }
+
+      await inngest.send({
+        name: "fragment/recreate-sandbox",
+        data: { fragmentId: input.fragmentId },
+      });
+
+      return { success: true };
+    }),
   create: protectedProcedure
     .input(
       z.object({

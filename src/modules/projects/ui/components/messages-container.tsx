@@ -43,6 +43,17 @@ export const MessagesContainer = ({
     }
   }, [messages, setActiveFragment]);
 
+  // Keep the active fragment in sync when its sandbox URL changes (e.g. after a restart).
+  useEffect(() => {
+    if (!activeFragment) return;
+    const fresh = messages
+      .map((message) => message.fragment)
+      .find((fragment) => fragment?.id === activeFragment.id);
+    if (fresh && fresh.sandboxUrl !== activeFragment.sandboxUrl) {
+      setActiveFragment(fresh);
+    }
+  }, [messages, activeFragment, setActiveFragment]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView();
   }, [messages.length]);

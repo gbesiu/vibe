@@ -1,7 +1,18 @@
 import { auth } from "@clerk/nextjs/server";
-import { RateLimiterPrisma } from "rate-limiter-flexible";
-
 import { prisma } from "@/lib/db";
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { RateLimiterPrisma } = require("rate-limiter-flexible") as {
+  RateLimiterPrisma: new (opts: {
+    storeClient: typeof prisma;
+    tableName: string;
+    points: number;
+    duration: number;
+  }) => {
+    consume: (key: string, points?: number) => Promise<{ remainingPoints: number; msBeforeNext: number }>;
+    get: (key: string) => Promise<{ remainingPoints: number; msBeforeNext: number } | null>;
+  };
+};
 
 const FREE_POINTS = 100; // TODO: revert to 2 before prod
 const PRO_POINTS = 100;

@@ -41,6 +41,9 @@ export const MessageForm = ({ projectId }: Props) => {
 
   const { data: usage } = useQuery(trpc.usage.status.queryOptions());
 
+  // usage can be null (returned when rate-limiter throws)
+  const usageData = usage as { remainingPoints: number; msBeforeNext: number } | null | undefined;
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -77,7 +80,7 @@ export const MessageForm = ({ projectId }: Props) => {
   const [isFocused, setIsFocused] = useState(false);
   const isPending = createMessage.isPending;
   const isButtonDisabled = isPending || !form.formState.isValid;
-  const showUsage = !!usage;
+  const showUsage = !!usageData;
   const currentValue = form.watch("value");
   const showChips = !currentValue?.trim();
 
@@ -85,8 +88,8 @@ export const MessageForm = ({ projectId }: Props) => {
     <Form {...form}>
       {showUsage && (
         <Usage
-          points={usage.remainingPoints}
-          msBeforeNext={usage.msBeforeNext}
+          points={usageData!.remainingPoints}
+          msBeforeNext={usageData!.msBeforeNext}
         />
       )}
       {showChips && (

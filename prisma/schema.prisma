@@ -43,3 +43,98 @@ model Usage {
   points    Int      @default(0)
   expire    DateTime?
 }
+
+// ─── E-Commerce ───────────────────────────────────────────────────────────────
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id                  String      @id @default(uuid())
+  name                String
+  slug                String      @unique
+  description         String?
+  price               Float
+  stock               Int         @default(0)
+  sku                 String?
+  images              String[]    @default([])
+  mainImage           String?
+  isActive            Boolean     @default(true)
+  isPublished         Boolean     @default(true)
+  // BaseLinker
+  baselinkerProductId String?     @unique
+  baselinkerData      Json?
+  // AI-generated content
+  aiDescription       String?
+  aiImageUrl          String?
+  aiVideoUrl          String?
+  aiGeneratedAt       DateTime?
+  // Relations
+  categoryId          String?
+  category            Category?   @relation(fields: [categoryId], references: [id])
+  cartItems           CartItem[]
+  orderItems          OrderItem[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+}
+
+model Order {
+  id                  String      @id @default(uuid())
+  userId              String
+  status              String      @default("AWAITING_PAYMENT")
+  subtotal            Float
+  shipping            Float       @default(0)
+  total               Float
+  shippingName        String
+  shippingEmail       String
+  shippingPhone       String?
+  shippingAddress     String
+  shippingCity        String
+  shippingZip         String
+  shippingCountry     String      @default("PL")
+  // iMoje payment
+  imojeTransactionId  String?
+  imojePaymentUrl     String?
+  imojeStatus         String?
+  items               OrderItem[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+  createdAt DateTime @default(now())
+}

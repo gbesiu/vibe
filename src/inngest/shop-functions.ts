@@ -4,7 +4,6 @@ import {
   getInventories,
   getInventoryCategories,
   getAllProductsFromInventory,
-  type BLProductData,
 } from "@/lib/baselinker";
 
 function slugify(text: string): string {

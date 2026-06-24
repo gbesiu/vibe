@@ -36,6 +36,9 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "fotz-studio-web-experience",
+    "pv-monitor-spark",
+    "Vibe Coding"
   ]
 }

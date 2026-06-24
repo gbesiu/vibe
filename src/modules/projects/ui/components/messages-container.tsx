@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { useTRPC } from "@/trpc/client";
 import { Fragment, MessageRole, MessageType } from "@/lib/prisma-types";
@@ -28,6 +29,26 @@ export const MessagesContainer = ({
   }, {
     refetchInterval: 2000,
   }));
+
+  const queryClient = useQueryClient();
+  const retryMutation = useMutation(trpc.messages.create.mutationOptions({
+    onSuccess: () => {
+      queryClient.invalidateQueries(trpc.messages.getMany.queryOptions({ projectId }));
+      queryClient.invalidateQueries(trpc.usage.status.queryOptions());
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  }));
+
+  const handleRetry = () => {
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((message) => message.role === "USER");
+    if (lastUserMessage) {
+      retryMutation.mutate({ value: lastUserMessage.content, projectId });
+    }
+  };
 
   useEffect(() => {
     const lastAssistantMessage = messages.findLast(
@@ -75,6 +96,8 @@ export const MessagesContainer = ({
               isActiveFragment={activeFragment?.id === message.fragment?.id}
               onFragmentClick={() => setActiveFragment(message.fragment)}
               type={message.type as MessageType}
+              onRetry={handleRetry}
+              isRetrying={retryMutation.isPending}
             />
           ))}
           {isLastMessageUser && <MessageLoading />}

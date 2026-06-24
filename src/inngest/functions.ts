@@ -12,6 +12,9 @@ import { getSandbox, lastAssistantTextMessageContent, parseAgentOutput } from ".
 // Model agenta kodu — konfigurowalny przez zmienną środowiskową CODE_AGENT_MODEL
 const CODE_AGENT_MODEL = process.env.CODE_AGENT_MODEL || "claude-sonnet-4-20250514";
 
+// Ile ostatnich wiadomości projektu trafia do kontekstu agenta (konfigurowalne).
+const AGENT_HISTORY_MESSAGES = Number(process.env.AGENT_HISTORY_MESSAGES) || 15;
+
 interface AgentState {
   summary: string;
   files: { [path: string]: string };
@@ -38,7 +41,7 @@ export const codeAgentFunction = inngest.createFunction(
         orderBy: {
           createdAt: "desc",
         },
-        take: 5,
+        take: AGENT_HISTORY_MESSAGES,
       });
 
       for (const message of messages) {

@@ -1,9 +1,10 @@
 import Image from "next/image";
 import { format } from "date-fns";
-import { ChevronRightIcon, Code2Icon } from "lucide-react";
+import { ChevronRightIcon, Code2Icon, Loader2Icon, RotateCcwIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Fragment, MessageRole, MessageType } from "@/lib/prisma-types";
 
 interface UserMessageProps {
@@ -61,6 +62,8 @@ interface AssistantMessageProps {
   isActiveFragment: boolean;
   onFragmentClick: (fragment: Fragment) => void;
   type: MessageType;
+  onRetry?: () => void;
+  isRetrying?: boolean;
 };
 
 const AssistantMessage = ({
@@ -70,6 +73,8 @@ const AssistantMessage = ({
   isActiveFragment,
   onFragmentClick,
   type,
+  onRetry,
+  isRetrying,
 }: AssistantMessageProps) => {
   return (
     <div className={cn(
@@ -98,6 +103,22 @@ const AssistantMessage = ({
             onFragmentClick={onFragmentClick}
           />
         )}
+        {type === "ERROR" && onRetry && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-fit"
+            onClick={onRetry}
+            disabled={isRetrying}
+          >
+            {isRetrying ? (
+              <Loader2Icon className="size-4 animate-spin" />
+            ) : (
+              <RotateCcwIcon className="size-4" />
+            )}
+            Try again
+          </Button>
+        )}
       </div>
     </div>
   )
@@ -111,6 +132,8 @@ interface MessageCardProps {
   isActiveFragment: boolean;
   onFragmentClick: (fragment: Fragment) => void;
   type: MessageType;
+  onRetry?: () => void;
+  isRetrying?: boolean;
 };
 
 export const MessageCard = ({
@@ -121,6 +144,8 @@ export const MessageCard = ({
   isActiveFragment,
   onFragmentClick,
   type,
+  onRetry,
+  isRetrying,
 }: MessageCardProps) => {
   if (role === "ASSISTANT") {
     return (
@@ -131,6 +156,8 @@ export const MessageCard = ({
         isActiveFragment={isActiveFragment}
         onFragmentClick={onFragmentClick}
         type={type}
+        onRetry={onRetry}
+        isRetrying={isRetrying}
       />
     )
   }

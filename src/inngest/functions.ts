@@ -9,6 +9,9 @@ import { inngest } from "./client";
 import { SANDBOX_TIMEOUT } from "./types";
 import { getSandbox, lastAssistantTextMessageContent, parseAgentOutput } from "./utils";
 
+// Model agenta kodu — konfigurowalny przez zmienną środowiskową CODE_AGENT_MODEL
+const CODE_AGENT_MODEL = process.env.CODE_AGENT_MODEL || "claude-sonnet-4-20250514";
+
 interface AgentState {
   summary: string;
   files: { [path: string]: string };
@@ -64,7 +67,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "An expert coding agent",
       system: PROMPT,
       model: anthropic({ 
-        model: "claude-sonnet-4-20250514",
+        model: CODE_AGENT_MODEL,
         defaultParameters: {
           max_tokens: 16384,
           temperature: 0.1,
@@ -198,7 +201,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
       model: anthropic({ 
-        model: "claude-sonnet-4-20250514",
+        model: CODE_AGENT_MODEL,
         defaultParameters: {
           max_tokens: 4096,
         },
@@ -210,7 +213,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "A response generator",
       system: RESPONSE_PROMPT,
       model: anthropic({ 
-        model: "claude-sonnet-4-20250514",
+        model: CODE_AGENT_MODEL,
         defaultParameters: {
           max_tokens: 4096,
         },
@@ -242,7 +245,7 @@ export const codeAgentFunction = inngest.createFunction(
         return await prisma.message.create({
           data: {
             projectId: event.data.projectId,
-            content: "Something went wrong. Please try again.",
+            content: "Something went wrong while generating your app. Please try again — a shorter or more specific prompt often helps.",
             role: "ASSISTANT",
             type: "ERROR",
           },

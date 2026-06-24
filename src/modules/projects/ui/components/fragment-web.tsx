@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { DownloadIcon, ExternalLinkIcon, Loader2Icon, RefreshCcwIcon } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { DownloadIcon, ExternalLinkIcon, Loader2Icon, PowerIcon, RefreshCcwIcon } from "lucide-react";
 import { toast } from "sonner";
+
+import { useTRPC } from "@/trpc/client";
 
 import { Hint } from "@/components/hint";
 import { Fragment } from "@/lib/prisma-types";
@@ -14,6 +17,14 @@ export function FragmentWeb({ data }: Props) {
   const [copied, setCopied] = useState(false);
   const [fragmentKey, setFragmentKey] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const trpc = useTRPC();
+  const recreateSandbox = useMutation(
+    trpc.messages.recreateSandbox.mutationOptions({
+      onSuccess: () => toast.success("Restarting sandbox — the preview will refresh shortly"),
+      onError: () => toast.error("Failed to restart sandbox"),
+    }),
+  );
 
   const onRefresh = () => {
     setFragmentKey((prev) => prev + 1);
@@ -73,6 +84,16 @@ export function FragmentWeb({ data }: Props) {
         <Hint text="Refresh" side="bottom" align="start">
           <Button size="sm" variant="outline" onClick={onRefresh}>
             <RefreshCcwIcon />
+          </Button>
+        </Hint>
+        <Hint text="Restart sandbox (rebuild an expired preview)" side="bottom" align="start">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => recreateSandbox.mutate({ fragmentId: data.id })}
+            disabled={recreateSandbox.isPending || !data.files}
+          >
+            {recreateSandbox.isPending ? <Loader2Icon className="animate-spin" /> : <PowerIcon />}
           </Button>
         </Hint>
         <Hint text="Click to copy" side="bottom">

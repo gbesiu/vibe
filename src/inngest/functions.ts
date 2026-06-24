@@ -277,3 +277,46 @@ export const codeAgentFunction = inngest.createFunction(
     };
   },
 );
+
+// Recreate an E2B sandbox from a fragment's saved files (previews expire after SANDBOX_TIMEOUT).
+export const recreateSandboxFunction = inngest.createFunction(
+  { id: "recreate-sandbox" },
+  { event: "fragment/recreate-sandbox" },
+  async ({ event, step }) => {
+    const fragmentId = event.data.fragmentId as string;
+
+    const files = await step.run("load-fragment-files", async () => {
+      const fragment = await prisma.fragment.findUnique({
+        where: { id: fragmentId },
+      });
+      if (!fragment) {
+        throw new Error("Fragment not found");
+      }
+      try {
+        return JSON.parse(fragment.files || "{}") as { [path: string]: string };
+      } catch {
+        return {} as { [path: string]: string };
+      }
+    });
+
+    const sandboxUrl = await step.run("create-and-populate-sandbox", async () => {
+      const templateId = process.env.E2B_SANDBOX_TEMPLATE || "vibe-code-fotz";
+      const sandbox = await Sandbox.create(templateId);
+      await sandbox.setTimeout(SANDBOX_TIMEOUT);
+      for (const [path, content] of Object.entries(files)) {
+        await sandbox.files.write(path, content);
+      }
+      const host = sandbox.getHost(3000);
+      return `https://${host}`;
+    });
+
+    await step.run("update-fragment-url", async () => {
+      return prisma.fragment.update({
+        where: { id: fragmentId },
+        data: { sandboxUrl },
+      });
+    });
+
+    return { url: sandboxUrl };
+  },
+);

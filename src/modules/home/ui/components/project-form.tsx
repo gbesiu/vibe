@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField } from "@/components/ui/form";
 
 import { PROJECT_TEMPLATES } from "../../constants";
+import { AI_MODELS, DEFAULT_AI_MODEL, type AiModelValue } from "@/lib/models";
 
 const formSchema = z.object({
   value: z.string()
@@ -36,6 +37,8 @@ export const ProjectForm = () => {
     },
   });
   
+  const [model, setModel] = useState<AiModelValue>(DEFAULT_AI_MODEL);
+
   const createProject = useMutation(trpc.projects.create.mutationOptions({
     onSuccess: (data) => {
       queryClient.invalidateQueries(
@@ -62,6 +65,7 @@ export const ProjectForm = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     await createProject.mutateAsync({
       value: values.value,
+      model,
     });
   };
 
@@ -116,19 +120,34 @@ export const ProjectForm = () => {
               </kbd>
               &nbsp;to submit
             </div>
-            <Button
-              disabled={isButtonDisabled}
-              className={cn(
-                "size-8 rounded-full",
-                isButtonDisabled && "bg-muted-foreground border"
-              )}
-            >
-              {isPending ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : (
-                <ArrowUpIcon />
-              )}
-            </Button>
+            <div className="flex items-center gap-x-2">
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value as AiModelValue)}
+                disabled={isPending}
+                aria-label="AI model"
+                className="text-xs rounded-md border bg-background px-2 py-1 outline-none cursor-pointer"
+              >
+                {AI_MODELS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                disabled={isButtonDisabled}
+                className={cn(
+                  "size-8 rounded-full",
+                  isButtonDisabled && "bg-muted-foreground border"
+                )}
+              >
+                {isPending ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : (
+                  <ArrowUpIcon />
+                )}
+              </Button>
+            </div>
           </div>
         </form>
         <div className="flex-wrap justify-center gap-2 hidden md:flex max-w-3xl">

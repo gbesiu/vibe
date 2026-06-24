@@ -52,6 +52,8 @@ export const codeAgentFunction = inngest.createFunction(
       return formattedMessages.reverse();
     });
 
+    const codeModel = (event.data.model as string) || CODE_AGENT_MODEL;
+
     const state = createState<AgentState>(
       {
         summary: "",
@@ -67,7 +69,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "An expert coding agent",
       system: PROMPT,
       model: anthropic({ 
-        model: CODE_AGENT_MODEL,
+        model: codeModel,
         defaultParameters: {
           max_tokens: 16384,
           temperature: 0.1,

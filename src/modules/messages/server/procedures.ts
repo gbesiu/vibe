@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { inngest } from "@/inngest/client";
 import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
 import { consumeCredits } from "@/lib/usage";
+import { AI_MODEL_VALUES } from "@/lib/models";
 
 export const messagesRouter = createTRPCRouter({
   getMany: protectedProcedure
@@ -59,6 +60,7 @@ export const messagesRouter = createTRPCRouter({
           .min(1, { message: "Value is required" })
           .max(10000, { message: "Value is too long" }),
         projectId: z.string().min(1, { message: "Project ID is required" }),
+        model: z.enum(AI_MODEL_VALUES).optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -102,6 +104,7 @@ export const messagesRouter = createTRPCRouter({
         data: {
           value: input.value,
           projectId: input.projectId,
+          model: input.model,
         },
       });
 

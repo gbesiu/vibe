@@ -25,7 +25,7 @@ AI-powered development platform that lets you create web applications by chattin
 - tRPC
 - Prisma ORM
 - PostgreSQL
-- OpenAI, Anthropic or Grok
+- Anthropic Claude (via Inngest AgentKit)
 - E2B Code Interpreter
 - Clerk Authentication
 - Inngest
@@ -88,8 +88,8 @@ Create a `.env` file with the following variables:
 DATABASE_URL=""
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
-# OpenAI
-OPENAI_API_KEY=""
+# Anthropic (AI agent)
+ANTHROPIC_API_KEY=""
 
 # E2B
 E2B_API_KEY=""
@@ -132,7 +132,7 @@ npm run lint           # Run ESLint
 ## How It Works
 
 1. **Project Creation**: Users create projects and describe what they want to build
-2. **AI Processing**: Messages are sent to GPT-4 agents via Inngest background jobs
+2. **AI Processing**: Messages are sent to Claude agents via Inngest background jobs
 3. **Code Generation**: AI agents use E2B sandboxes to generate and test Next.js applications
 4. **Real-time Updates**: Generated code and previews are displayed in split-pane interface
 5. **File Management**: Users can browse generated files with syntax highlighting

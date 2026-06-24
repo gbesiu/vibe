@@ -14,8 +14,8 @@ const { RateLimiterPrisma } = require("rate-limiter-flexible") as {
   };
 };
 
-const FREE_POINTS = 100; // TODO: revert to 2 before prod
-const PRO_POINTS = 100;
+const FREE_POINTS = 5;   // liczba generacji / 30 dni dla planu darmowego
+const PRO_POINTS = 100;  // liczba generacji / 30 dni dla planu pro
 const DURATION = 30 * 24 * 60 * 60; // 30 days
 const GENERATION_COST = 1;
 

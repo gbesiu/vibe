@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const rateLimiterStub = path.resolve(__dirname, "src/lib/stubs/RateLimiterDrizzle.js");
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -18,16 +20,19 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Turbopack alias (stable in Next.js 15 — replaces experimental.turbo)
+  turbopack: {
+    resolveAlias: {
+      "rate-limiter-flexible/lib/RateLimiterDrizzle.js": rateLimiterStub,
+    },
+  },
+
+  // Webpack alias (for production builds without --turbopack)
   webpack(config) {
-    // Replace RateLimiterDrizzle with an empty stub so webpack doesn't
-    // follow its require() chain into .d.ts files (which cause parse errors).
     config.resolve = config.resolve ?? {};
     config.resolve.alias = {
       ...(config.resolve.alias as Record<string, string> ?? {}),
-      "rate-limiter-flexible/lib/RateLimiterDrizzle.js": path.resolve(
-        __dirname,
-        "src/lib/stubs/RateLimiterDrizzle.js"
-      ),
+      "rate-limiter-flexible/lib/RateLimiterDrizzle.js": rateLimiterStub,
     };
     return config;
   },
